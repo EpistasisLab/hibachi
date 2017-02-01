@@ -47,11 +47,11 @@ def create_file(data,label):
 def read_file(fname):
     """ return both data and x
         data = rows of instances
-        x is data tranposed to rows of features """
+        x is data transposed to rows of features """
     with open(fname) as data:
         dataReader = csv.reader(data, delimiter='\t')
         data = list(list(int(elem) for elem in row) for row in dataReader)
-    #transpose into x
+    #transpose into x (used in evaluation)
     inst_length = len(data[0])
     x = list()
     for i in range(inst_length):
