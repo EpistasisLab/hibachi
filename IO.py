@@ -53,7 +53,7 @@ def read_file(fname):
         data = list(list(int(elem) for elem in row) for row in dataReader)
     #transpose into x
     inst_length = len(data[0])
-    x = []
+    x = list()
     for i in range(inst_length):
         y = [col[i] for col in data]
         x.append(y)
