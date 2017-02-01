@@ -142,7 +142,7 @@ del df['gen']
 del df['nevals']
 
 print("writing data with Class to results.tsv")
-IO.create_file(data,labels[-1])
+IO.create_file(data,labels[-1]) # use last individual
 print('saving stats to stats.pdf')
 IO.plot_stats(df)
 print('saving tree plot to tree.pdf')
