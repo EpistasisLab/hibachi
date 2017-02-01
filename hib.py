@@ -11,7 +11,6 @@ import operators as ops
 from mdr import utils
 
 labels = list()
-#labels.append(0)
 # Read the data and put it in a list of lists.
 # x is transposed view of data
 data, x = IO.read_file('input.tsv')
