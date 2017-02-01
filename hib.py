@@ -77,7 +77,7 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 
 def evalData(individual):
-    result = []
+    result = list()
     igsum = n = 0
 
     # Transform the tree expression in a callable function
@@ -122,8 +122,8 @@ def hibachi():
 
 # run the program
 pop, stats, hof, logbook = hibachi()
-best = []
-fitness = []
+best = list()
+fitness = list()
 
 for ind in hof:
     best.append(ind)
