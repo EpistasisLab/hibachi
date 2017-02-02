@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import random
 import operator as op
 import itertools
@@ -9,6 +10,10 @@ from deap import algorithms, base, creator, tools, gp
 import IO
 import operators as ops
 from mdr import utils
+
+if (sys.version_info[0] < 3):
+    print("hibachi requires Python version 3.x")
+    sys.exit(1)
 
 labels = list()
 # Read the data and put it in a list of lists.
@@ -65,11 +70,11 @@ pset.addEphemeralConstant(randval, lambda: random.random() * 100, float)
 pset.addTerminal(False, bool)
 pset.addTerminal(True, bool)
 # creator
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMax)
+creator.create("FitnessMulti", base.Fitness, weights=(1.0, -1.0))
+creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMulti)
 # toolbox
 toolbox = base.Toolbox()
-toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=1, max_=2)
+toolbox.register("expr", gp.genHalfAndHalf, pset=pset, min_=2, max_=5)
 toolbox.register("individual",
                  tools.initIterate,creator.Individual, toolbox.expr)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -94,7 +99,11 @@ def evalData(individual):
                 igsum += utils.three_way_information_gain(x[i], x[j], 
                                                           x[k], result)
                 n += 1
-    return (igsum / n), len(individual)
+
+    if len(individual) <= 1:
+        return -sys.maxsize, sys.maxsize
+    else:
+        return (igsum / n), len(individual)
     
 toolbox.register("evaluate", evalData)
 toolbox.register("select", tools.selNSGA2)
@@ -103,11 +112,11 @@ toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
 toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
 
 def hibachi():
-    MU, LAMBDA = 50, 100
+    MU, LAMBDA = 500, 500
     #random.seed(64)
     pop = toolbox.population(n=MU)
     hof = tools.ParetoFront()
-    stats = tools.Statistics(lambda ind: ind.fitness.values)
+    stats = tools.Statistics(lambda ind: ind.fitness.values[0])
     stats.register("avg", np.mean)
     stats.register("std", np.std)
     stats.register("min", np.min)
@@ -118,8 +127,9 @@ def hibachi():
                           verbose=True, halloffame=hof)
     
     return pop, stats, hof, log
-
-# run the program
+###################
+# run the program #
+###################
 pop, stats, hof, logbook = hibachi()
 best = list()
 fitness = list()
@@ -144,5 +154,7 @@ print("writing data with Class to results.tsv")
 IO.create_file(data,labels[-1]) # use last individual
 print('saving stats to stats.pdf')
 IO.plot_stats(df)
-print('saving tree plot to tree.pdf')
-IO.plot_tree(best[-1])
+print('saving tree plots to tree_##.pdf')
+IO.plot_trees(best)
+print('saving fitness plot to fitness.pdf')
+IO.plot_fitness(fitness)
