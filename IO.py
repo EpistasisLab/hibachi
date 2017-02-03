@@ -71,3 +71,9 @@ def read_file(fname):
         x.append(y)
     del y
     return data, x
+###########################################################################
+def printf(format, *args):
+    """ works just like the C/C++ printf function """
+    import sys
+    sys.stdout.write(format % args)
+    sys.stdout.flush()
