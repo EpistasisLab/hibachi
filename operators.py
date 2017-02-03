@@ -205,8 +205,3 @@ def left(a, b):
 def right(a, b):
     """ return right value """
     return b
-########################################################################
-def printf(format, *args):
-    import sys
-    sys.stdout.write(format % args)
-    sys.stdout.flush()
