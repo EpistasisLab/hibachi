@@ -12,13 +12,19 @@ import operators as ops
 from mdr import utils
 
 if (sys.version_info[0] < 3):
-    print("hibachi requires Python version 3.x")
+    print("hibachi requires Python version 3.5 or newer")
     sys.exit(1)
+
+try:
+    infile = sys.argv[1]
+except:
+    print('no file argument')
+    sys.exit(0)
 
 labels = list()
 # Read the data and put it in a list of lists.
 # x is transposed view of data
-data, x = IO.read_file('input.tsv')
+data, x = IO.read_file(infile)
 inst_length = len(data[0])
 # defined a new primitive set for strongly typed GP
 pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length), 
@@ -112,6 +118,8 @@ toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
 toolbox.register("mutate", gp.mutUniform, expr=toolbox.expr_mut, pset=pset)
 
 def hibachi():
+    """ set up stats and population size,
+        then start the process """
     MU, LAMBDA = 500, 500
     #random.seed(64)
     pop = toolbox.population(n=MU)
