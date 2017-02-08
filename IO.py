@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+#===============================================================================
+#
+#          FILE:  IO.py
+# 
+#         USAGE:  import IO (from hib.py)
+# 
+#   DESCRIPTION:  graphing and file i/o routines.  
+# 
+#       OPTIONS:  ---
+#  REQUIREMENTS:  ---
+#          BUGS:  ---
+#         NOTES:  ---
+#        AUTHOR:  Peter Robert Schmitt (discovery (iMac)), pschmitt@upenn.edu
+#       COMPANY:  University of Pennsylvania
+#       VERSION:  0.1.0
+#       CREATED:  02/06/2017 14:54:24 EST
+#      REVISION:  ---
+#===============================================================================
 import matplotlib.pyplot as plt
 import matplotlib
 import networkx as nx
@@ -27,6 +46,7 @@ def plot_trees(best):
             plotfile = "tree_0" + str(i) + ".pdf"
         else:    
             plotfile = "tree_" + str(i) + ".pdf"
+        plt.title(str(best[i]))
         f.savefig(plotfile)
 ###########################################################################
 def plot_stats(df):
@@ -36,8 +56,8 @@ def plot_stats(df):
     fig.savefig('stats.pdf')
 ###########################################################################
 def plot_fitness(fit):
-    fitdf = pd.DataFrame(fit, columns=['Fitness', 'Value'])
-    ax = fitdf.plot(x='Value', y='Fitness', kind='scatter')
+    fitdf = pd.DataFrame(fit, columns=['Fitness', 'GP Tree Size'])
+    ax = fitdf.plot(x='GP Tree Size', y='Fitness', kind='scatter')
     fig = ax.get_figure()
     fig.savefig('fitness.pdf')
 ###########################################################################
