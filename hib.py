@@ -7,29 +7,28 @@
 # 
 #   DESCRIPTION:  Data simulation software that creates data sets with 
 #                 particular characteristics
-#       OPTIONS:  ---
+#       OPTIONS:  input_file [folds|subsets|noise]
 #  REQUIREMENTS:  python >= 3.5, deap, scikit-mdr, pygraphviz
 #          BUGS:  ---
-#         NOTES:  ---
+#         Notes:  test with 10-fold CV
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.0
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Tue Feb  7 13:11:10 EST 2017
+#      REVISION:  Wed Feb 15 15:21:00 EST 2017
 #===============================================================================
-
-import sys
-import random
-import operator as op
-from operator import itemgetter
+from deap import algorithms, base, creator, tools, gp
+from mdr.utils import three_way_information_gain as three_way_ig
+import IO
 import itertools
 import numpy as np
-import pandas as pd
-from deap import algorithms, base, creator, tools, gp
-import IO
+import operator as op
 import operators as ops
-from mdr.utils import three_way_information_gain
-
+import os
+import pandas as pd
+import random
+import sys
+###############################################################################
 if (sys.version_info[0] < 3):
     print("hibachi requires Python version 3.5 or newer")
     sys.exit(1)
@@ -38,13 +37,20 @@ try:
     infile = sys.argv[1]
 except:
     print('no file argument')
-    sys.exit(0)
+    sys.exit(2)
+
+try:
+    evaluate = sys.argv[2]
+except:
+    print('running default normal evaluation')
+    evaluate = 'normal'
 
 labels = list()
 # Read the data and put it in a list of lists.
 # x is transposed view of data
 data, x = IO.read_file(infile)
-inst_length = len(data[0])
+inst_length = len(x)
+###############################################################################
 # defined a new primitive set for strongly typed GP
 pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length), 
                             bool, "X")
@@ -107,10 +113,11 @@ toolbox.register("individual",
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 ##############################################################################
-def evalData(individual):
+def evalData(individual, training_data):
+    """ evaluate the individual """
     result = list()
-    igsum = 0 
-
+    igsums = np.array([])
+    x = training_data
     # Transform the tree expression in a callable function
     func = toolbox.compile(expr=individual)
 
@@ -119,21 +126,54 @@ def evalData(individual):
     result = [int(func(*inst[:inst_length])) for inst in data]
     if (len(np.unique(result)) == 1):
         return -sys.maxsize, sys.maxsize
+    
+    if evaluate == 'folds':
+        rangeval = numfolds = 10
+        folds = IO.getfolds(data, numfolds)
 
-    # Calculate information gain between data columns and result
-    # and return sum of these calculations
-    for i in range(inst_length):
-        for j in range(i+1,inst_length):
-            for k in range(j+1,inst_length):
-                igsum += three_way_information_gain(x[i], x[j], x[k], result)
+    elif evaluate == 'subsets':
+        rangeval = 10
+        percent = 25
 
-    labels.append((igsum,result)) # save all results
+    elif evaluate == 'noise':
+        rangeval = 10
+        percent = 10
+
+    else:  # normal 
+        rangeval = 1
+
+    for m in range(rangeval):
+        igsum = 0 
+        if evaluate == 'folds': 
+            xsub = list(folds[m])
+        elif evaluate == 'subsets': 
+            xsub = IO.subsets(x,percent)
+        elif evaluate == 'noise': 
+            xsub = IO.addnoise(x,percent)
+        else:  # normal
+            xsub = x
+    
+        # Calculate information gain between data columns and result
+        # and return mean of these calculations
+        for i in range(inst_length):
+            for j in range(i+1,inst_length):
+                for k in range(j+1,inst_length):
+                    igsum += three_way_ig(xsub[i], xsub[j], xsub[k], result)
+                    
+        igsums = np.append(igsums,igsum)
+        
+    igsum_avg = np.mean(igsums)
+    labels.append((igsum_avg, result)) # save all results
+    
     if len(individual) <= 1:
         return -sys.maxsize, sys.maxsize
     else:
-        return igsum, len(individual)
+        if evaluate == 'normal':
+            return igsum, len(individual)
+        else:
+            return igsum_avg, len(individual)
 ##############################################################################
-toolbox.register("evaluate", evalData)
+toolbox.register("evaluate", evalData, training_data=x)
 toolbox.register("select", tools.selNSGA2)
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
@@ -198,8 +238,10 @@ del df['gen']
 del df['nevals']
 
 print("writing data with Class to results.tsv")
-labels.sort(key=itemgetter(0),reverse=True)     # sort by igsum (score)
-IO.create_file(data,labels[0][1]) # use first individual
+infile = os.path.splitext(infile)[0]
+outfile = "results-" + infile + "-" + evaluate + ".tsv"
+labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
+IO.create_file(data,labels[0][1],outfile)       # use first individual
 
 print('saving stats to stats.pdf')
 IO.plot_stats(df)
