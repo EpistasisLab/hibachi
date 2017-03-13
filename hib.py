@@ -3,24 +3,28 @@
 #
 #          FILE:  hib.py
 # 
-#         USAGE:  ./hib.py <tab_delimited_input_file>
+#         USAGE:  ./hib.py <file.tsv> evaluate population generations
 # 
 #   DESCRIPTION:  Data simulation software that creates data sets with 
 #                 particular characteristics
 #       OPTIONS:  input_file [folds|subsets|noise]
 #  REQUIREMENTS:  python >= 3.5, deap, scikit-mdr, pygraphviz
 #          BUGS:  ---
-#         Notes:  test with 10-fold CV
+#       UPDATES:  170224: try/except in evalData()
+#                 170228: files.sort() to order files
+#                 170313: modified to use IO.get_arguments()
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.0
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Wed Feb 15 15:21:00 EST 2017
+#      REVISION:  Mon Mar 13 12:20:52 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from mdr.utils import three_way_information_gain as three_way_ig
+from mdr.utils import two_way_information_gain as two_way_ig
 import IO
 import itertools
+import glob
 import numpy as np
 import operator as op
 import operators as ops
@@ -28,26 +32,35 @@ import os
 import pandas as pd
 import random
 import sys
+import time
+
 ###############################################################################
 if (sys.version_info[0] < 3):
-    print("hibachi requires Python version 3.5 or newer")
+    print("hibachi requires Python version 3.5 or later")
     sys.exit(1)
 
-try:
-    infile = sys.argv[1]
-except:
-    print('no file argument')
-    sys.exit(2)
+labels = []
+all_igsums = []
+rseed = random.randint(1,1000)
+start = time.time()
 
-try:
-    evaluate = sys.argv[2]
-except:
-    print('running default normal evaluation')
-    evaluate = 'normal'
-
-labels = list()
+options = IO.get_arguments()
+infile = options['file']
+evaluate = options['evaluation']
+population = options['population']
+generations = options['generations']
+ig = options['information_gain']
+#
 # Read the data and put it in a list of lists.
 # x is transposed view of data
+# select file randomly
+#
+if infile == 'random':
+    files = glob.glob('data/in*')
+    num_files = len(files)
+    random_file = random.randint(0,num_files-1)
+    infile = files[random_file]
+    print('random file selected:',infile)
 data, x = IO.read_file(infile)
 inst_length = len(x)
 ###############################################################################
@@ -91,8 +104,6 @@ pset.addPrimitive(ops.logAofB, [float,float], float)
 pset.addPrimitive(ops.permute, [float,float], float)
 pset.addPrimitive(ops.choose, [float,float], float)
 # misc operators 
-#pset.addPrimitive(ops.minimum, [float,float], float)
-#pset.addPrimitive(ops.maximum, [float,float], float)
 pset.addPrimitive(min, [float,float], float)
 pset.addPrimitive(max, [float,float], float)
 pset.addPrimitive(ops.left, [float,float], float)
@@ -123,12 +134,17 @@ def evalData(individual, training_data):
 
     # Create class possibility.  
     # If class has a unique length of 1, toss it.
-    result = [int(func(*inst[:inst_length])) for inst in data]
+    try:
+        result = [int(func(*inst[:inst_length])) for inst in data]
+    except:
+        return -sys.maxsize, sys.maxsize
+
     if (len(np.unique(result)) == 1):
         return -sys.maxsize, sys.maxsize
     
     if evaluate == 'folds':
-        rangeval = numfolds = 10
+        rangeval = 10
+        numfolds = 10
         folds = IO.getfolds(data, numfolds)
 
     elif evaluate == 'subsets':
@@ -141,29 +157,38 @@ def evalData(individual, training_data):
 
     else:  # normal 
         rangeval = 1
-
+        
     for m in range(rangeval):
         igsum = 0 
         if evaluate == 'folds': 
             xsub = list(folds[m])
+
         elif evaluate == 'subsets': 
             xsub = IO.subsets(x,percent)
+
         elif evaluate == 'noise': 
             xsub = IO.addnoise(x,percent)
+
         else:  # normal
             xsub = x
     
         # Calculate information gain between data columns and result
         # and return mean of these calculations
-        for i in range(inst_length):
-            for j in range(i+1,inst_length):
-                for k in range(j+1,inst_length):
-                    igsum += three_way_ig(xsub[i], xsub[j], xsub[k], result)
+        if(ig == 2):
+            for i in range(inst_length):
+                for j in range(i+1,inst_length):
+                    igsum += two_way_ig(xsub[i], xsub[j], result)
+        elif(ig == 3):
+            for i in range(inst_length):
+                for j in range(i+1,inst_length):
+                    for k in range(j+1,inst_length):
+                        igsum += three_way_ig(xsub[i], xsub[j], xsub[k], result)
                     
         igsums = np.append(igsums,igsum)
         
     igsum_avg = np.mean(igsums)
     labels.append((igsum_avg, result)) # save all results
+    all_igsums.append(igsums)
     
     if len(individual) <= 1:
         return -sys.maxsize, sys.maxsize
@@ -195,13 +220,13 @@ def pareto_eq(ind1, ind2):
     """
     return np.all(ind1.fitness.values == ind2.fitness.values)
 ##############################################################################
-def hibachi():
+def hibachi(pop,gen,rseed):
     """ set up stats and population size,
         then start the process """
-    MU, LAMBDA = 500, 500
-    #random.seed(64)
+    MU, LAMBDA = pop, pop
+    NGEN = gen 
+    random.seed(rseed)
     pop = toolbox.population(n=MU)
-#   hof = tools.ParetoFront()
     hof = tools.ParetoFront(similar=pareto_eq)
     stats = tools.Statistics(lambda ind: max(ind.fitness.values[0],0))
     stats.register("avg", np.mean)
@@ -210,17 +235,22 @@ def hibachi():
     stats.register("max", np.max)
     
     pop, log = algorithms.eaMuPlusLambda(pop,toolbox,mu=MU,lambda_=LAMBDA, 
-                          cxpb=0.7, mutpb=0.3, ngen=40, stats=stats, 
+                          cxpb=0.7, mutpb=0.3, ngen=NGEN, stats=stats, 
                           verbose=True, halloffame=hof)
     
     return pop, stats, hof, log
 ##############################################################################
 # run the program #
 ###################
-pop, stats, hof, logbook = hibachi()
-best = list()
-fitness = list()
+print('input data:  ' + infile)
+print('population:  ' + str(population))
+print('generations: ' + str(generations))
+print('evaluation:  ' + str(evaluate))
+print('ign 2/3way:  ' + str(ig))
 
+pop, stats, hof, logbook = hibachi(population,generations,rseed)
+best = []
+fitness = []
 for ind in hof:
     best.append(ind)
     fitness.append(ind.fitness.values)
@@ -233,21 +263,84 @@ record = stats.compile(pop)
 print("statistics:")
 print(record)
 
+tottime = time.time() - start
+if tottime > 3600:
+    IO.printf("\nRuntime: %.2f hours\n", tottime/3600)
+elif tottime > 60:
+    IO.printf("\nRuntime: %.2f minutes\n", tottime/60)
+else:
+    IO.printf("\nRuntime: %.2f seconds\n", tottime)
 df = pd.DataFrame(logbook)
 del df['gen']
 del df['nevals']
-
-print("writing data with Class to results.tsv")
-infile = os.path.splitext(infile)[0]
-outfile = "results-" + infile + "-" + evaluate + ".tsv"
+#
+# sys.exit(0)
+#
+file = os.path.splitext(os.path.basename(infile))[0]
+outfile = "results-" + file + "-" + evaluate + "-" + str(rseed) + ".tsv"
+print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(data,labels[0][1],outfile)       # use first individual
+#
+file = os.path.splitext(os.path.basename(infile))[0]
+statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+print('saving stats to', statfile)
+IO.plot_stats(df,statfile)
+#
+#print('saving tree plots to tree_##.pdf')
+#IO.plot_trees(best)
+#
+outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+print('saving fitness plot to', outfile)
+IO.plot_fitness(fitness,outfile)
+#
+# test results against other data
+#
+#all_igsums.append(np.array([0,0,0,0,0,0,0,0,0,0]))
+files = glob.glob('data/in*')
+files.sort()
+D = [0] * len(files)
+X = [0] * len(files)
+#Dr,Xr = IO.read_file('data/rotated01-3.tsv') # rotated from input3.tsv
+print()
+#print('input file: rotated01-3.tsv')
+#print("best[0]", evalData(best[0],Xr), end="\t")
+#print('best[1]', evalData(best[1],Xr))
+#
+#  Test remaining data files with top 2 best individuals
+#
+print('number of files:',len(files))
+for i in range(len(files)):
+    if files[i] == infile: continue
+    D[i],X[i] = IO.read_file(files[i]) #  new data file
+    print()
+    print('input file:', files[i])
+    print('best[0]', evalData(best[0],X[i]))
+    print('best[1]', evalData(best[1],X[i]))
 
-print('saving stats to stats.pdf')
-IO.plot_stats(df)
+print()
+print('NORMAL evaluation (original input file):')
+print()
+#all_igsums.append(np.array([0,0,0,0,0,0,0,0,0,0]))
+evaluate = 'normal'
+print('input file:', infile)
+print('best[0]', evalData(best[0],x))
+print('best[1]', evalData(best[1],x))
+print()
 
-print('saving tree plots to tree_##.pdf')
-IO.plot_trees(best)
-
-print('saving fitness plot to fitness.pdf')
-IO.plot_fitness(fitness)
+print('tree-0', best[0])
+print('tree-1', best[1])
+#
+# save for manual processing
+#
+#ind_str = 'some individual string'
+#individual = creator.Individual.from_string(ind_str, pset)
+#func = toolbox.compile(expr=individual)
+#
+#  Plot standard deviations
+#
+std_igsums = np.array([])
+for i in range(len(all_igsums)):
+    std_igsums = np.append(std_igsums, np.std(all_igsums[i]))
+infile = os.path.splitext(os.path.basename(infile))[0]
+IO.plot_hist(std_igsums,evaluate,infile,rseed)
