@@ -14,11 +14,12 @@
 #                 170217: modified create_file() to name file uniquely
 #                 170302: added plot_hist() to plot std
 #                 170313: added get_arguments()
+#                 170319: added addone()
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.1
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Mar 13 12:31:39 EDT 2017
+#      REVISION:  Mon Mar 20 09:57:07 EDT 2017
 #==============================================================================
 import matplotlib
 import matplotlib.pyplot as plt
@@ -42,13 +43,23 @@ def get_arguments():
             help='name of evaluation [normal|folds|subsets|noise]' +
                  ' (default=normal)')
     parser.add_argument('-f', '--file', type=str,
-            help='name of training data file (REQ)')
+            help='name of training data file (REQ)' +
+                 ' filename of random will create all data')
     parser.add_argument("-g", "--generations", type=int, 
             help="number of generations (default=40)")
     parser.add_argument("-i", "--information_gain", type=int, 
             help="information gain 2 way or 3 way (default=2)")
     parser.add_argument("-p", "--population", type=int, 
             help="size of population (default=100)")
+    parser.add_argument("-r", "--random_data_files", type=int, 
+            help="number of random data to use instead of files (default=0)")
+    parser.add_argument("-s", "--seed", type=int, 
+            help="random seed to use (default=random value 1-1000)")
+    parser.add_argument("-R", "--rows", type=int, 
+            help="random data rows (default=1000)")
+    parser.add_argument("-C", "--columns", type=int, 
+            help="random data columns (default=3)")
+
 
     args = parser.parse_args()
 
@@ -60,6 +71,11 @@ def get_arguments():
         options['basename'] = os.path.basename(args.file)
         options['dir_path'] = os.path.dirname(args.file)
 
+    if(args.seed == None):
+        options['seed'] = -999
+    else:
+        options['seed'] = args.seed
+
     if(args.population == None):
         options['population'] = 100
     else:
@@ -70,6 +86,11 @@ def get_arguments():
     else:
         options['information_gain'] = args.information_gain
 
+    if(args.random_data_files == None):
+        options['random_data_files'] = 0
+    else:
+        options['random_data_files'] = args.random_data_files
+
     if(args.generations == None):
         options['generations'] = 40
     else:
@@ -79,6 +100,16 @@ def get_arguments():
         options['evaluation'] = 'normal'
     else:
         options['evaluation'] = args.evaluation
+
+    if(args.rows == None):
+        options['rows'] = 1000
+    else:
+        options['rows'] = args.rows
+
+    if(args.columns == None):
+        options['columns'] = 3
+    else:
+        options['columns'] = args.columns
 
     return options
 ###############################################################################
@@ -141,9 +172,14 @@ def plot_hist(data, evaluate, infile, rndnum):
     plt.xlabel(xlab);
     plt.ylabel('Count');
     title = ("std - " + evaluate + " - " + infile + ' - rseed: ' + str(rndnum))
-    plotfile = ("std-" + evaluate + "-" + infile + '-rseed-' + str(rndnum) + '.pdf')
+    plotfile = ("std-"+evaluate+"-"+infile+'-rseed-'+str(rndnum)+'.pdf')
     plt.title(title);
     f.savefig(plotfile)
+###############################################################################
+def get_random_data(rows, cols):
+    data = np.random.randint(0,3,size=(rows,cols))
+    x = data.transpose()
+    return data.tolist(), x.tolist()
 ###############################################################################
 def create_file(data,label,outfile):
     """ append label as column to data then write out file with header """
@@ -161,7 +197,7 @@ def create_file(data,label,outfile):
     datadf.to_csv(outfile, sep='\t', index=False)
 ###############################################################################
 def read_file(fname):
-    """ return both data and x
+    """ UNUSED: return both data and x
         data = rows of instances
         x is data transposed to rows of features """
     with open(fname) as data:
@@ -177,10 +213,12 @@ def read_file(fname):
     return data, x
 ###############################################################################
 def read_file_np(fname):
-    """ UNUSED: read data into numpy arrays """
+    """ return both data and x
+        data = rows of instances
+        x is data transposed to rows of features """
     data = np.genfromtxt(fname, dtype=np.int, delimiter='\t') 
     x = data.transpose()
-    return data, x
+    return data.tolist(), x.tolist()
 ###############################################################################
 def subsets(x,percent):
     """ take a subset of "percent" of x """
@@ -220,6 +258,19 @@ def addnoise(x,pcnt):
             xa[i][j] = np.random.choice(rep[xa[i][j]])
 
     return xa.tolist()
+###############################################################################
+def addone(d):
+    a = np.array(d)
+    a += 1
+    return a.tolist()
+###############################################################################
+def xpose(d):
+    """ transpose list of lists """
+    x = []
+    for i in range(len(d[0])):
+        y = [col[i] for col in d]
+        x.append(y)
+    return x
 ###############################################################################
 def printf(format, *args):
     """ works just like the C/C++ printf function """
