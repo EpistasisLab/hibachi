@@ -9,20 +9,23 @@
 #                 particular characteristics
 #       OPTIONS:  input_file [folds|subsets|noise]
 #  REQUIREMENTS:  python >= 3.5, deap, scikit-mdr, pygraphviz
-#          BUGS:  ---
+#          BUGS:  Damn ticks!!
 #       UPDATES:  170224: try/except in evalData()
 #                 170228: files.sort() to order files
 #                 170313: modified to use IO.get_arguments()
+#                 170319: modified to use evals for evaluations
+#                 170320: modified to add 1 to data elements before processing
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.0
+#       VERSION:  0.1.6
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Mar 13 12:20:52 EDT 2017
+#      REVISION:  Mon Mar 20 13:28:00 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from mdr.utils import three_way_information_gain as three_way_ig
 from mdr.utils import two_way_information_gain as two_way_ig
 import IO
+import evals
 import itertools
 import glob
 import numpy as np
@@ -33,7 +36,6 @@ import pandas as pd
 import random
 import sys
 import time
-
 ###############################################################################
 if (sys.version_info[0] < 3):
     print("hibachi requires Python version 3.5 or later")
@@ -41,7 +43,7 @@ if (sys.version_info[0] < 3):
 
 labels = []
 all_igsums = []
-rseed = random.randint(1,1000)
+result = []
 start = time.time()
 
 options = IO.get_arguments()
@@ -49,19 +51,28 @@ infile = options['file']
 evaluate = options['evaluation']
 population = options['population']
 generations = options['generations']
+rdf_count = options['random_data_files']
 ig = options['information_gain']
+rows = options['rows']
+cols = options['columns']
+
+if(options['seed'] == -999):
+    rseed = random.randint(1,1000)
+    random.seed(rseed)
+else:
+    rseed = options['seed']
+    random.seed(rseed)
 #
-# Read the data and put it in a list of lists.
+# Read/create the data and put it in a list of lists.
 # x is transposed view of data
-# select file randomly
 #
 if infile == 'random':
-    files = glob.glob('data/in*')
-    num_files = len(files)
-    random_file = random.randint(0,num_files-1)
-    infile = files[random_file]
-    print('random file selected:',infile)
-data, x = IO.read_file(infile)
+    data, x = IO.get_random_data(rows,cols)
+else:
+    data, x = IO.read_file_np(infile)
+    rows = len(data)
+    cols = len(x)
+
 inst_length = len(x)
 ###############################################################################
 # defined a new primitive set for strongly typed GP
@@ -79,15 +90,18 @@ pset.addPrimitive(ops.safediv, [float,float], float)
 pset.addPrimitive(ops.modulus, [float,float], float)
 pset.addPrimitive(ops.plus_mod_two, [float,float], float)
 # logic operators 
+pset.addPrimitive(op.lt, [float, float], bool)
+pset.addPrimitive(op.le, [float, float], bool)
+pset.addPrimitive(op.ne, [float, float], bool)
+pset.addPrimitive(op.gt, [float, float], bool)
+pset.addPrimitive(op.ge, [float, float], bool)
+pset.addPrimitive(op.eq, [float, float], bool)
+pset.addPrimitive(ops.xor, [float,float], float)
 # Define a new if-then-else function
 def if_then_else(input, output1, output2):
     if input: return output1
     else: return output2
-
-pset.addPrimitive(op.lt, [float, float], bool)
-pset.addPrimitive(op.eq, [float, float], bool)
 pset.addPrimitive(if_then_else, [bool, float, float], float)
-pset.addPrimitive(ops.xor, [float,float], float)
 # bitwise operators 
 pset.addPrimitive(ops.bitand, [float,float], float)
 pset.addPrimitive(ops.bitor, [float,float], float)
@@ -129,6 +143,8 @@ def evalData(individual, training_data):
     result = list()
     igsums = np.array([])
     x = training_data
+    # add 1 to data
+    x1 = IO.addone(x)
     # Transform the tree expression in a callable function
     func = toolbox.compile(expr=individual)
 
@@ -145,7 +161,8 @@ def evalData(individual, training_data):
     if evaluate == 'folds':
         rangeval = 10
         numfolds = 10
-        folds = IO.getfolds(data, numfolds)
+        d1 = IO.xpose(x1)
+        folds = evals.getfolds(d1, numfolds)
 
     elif evaluate == 'subsets':
         rangeval = 10
@@ -164,13 +181,13 @@ def evalData(individual, training_data):
             xsub = list(folds[m])
 
         elif evaluate == 'subsets': 
-            xsub = IO.subsets(x,percent)
+            xsub = evals.subsets(x1,percent)
 
         elif evaluate == 'noise': 
-            xsub = IO.addnoise(x,percent)
+            xsub = evals.addnoise(x1,percent)
 
         else:  # normal
-            xsub = x
+            xsub = x1
     
         # Calculate information gain between data columns and result
         # and return mean of these calculations
@@ -189,7 +206,7 @@ def evalData(individual, training_data):
     igsum_avg = np.mean(igsums)
     labels.append((igsum_avg, result)) # save all results
     all_igsums.append(igsums)
-    
+
     if len(individual) <= 1:
         return -sys.maxsize, sys.maxsize
     else:
@@ -225,7 +242,6 @@ def hibachi(pop,gen,rseed):
         then start the process """
     MU, LAMBDA = pop, pop
     NGEN = gen 
-    random.seed(rseed)
     pop = toolbox.population(n=MU)
     hof = tools.ParetoFront(similar=pareto_eq)
     stats = tools.Statistics(lambda ind: max(ind.fitness.values[0],0))
@@ -240,14 +256,14 @@ def hibachi(pop,gen,rseed):
     
     return pop, stats, hof, log
 ##############################################################################
-# run the program #
-###################
+# run the program
+##############################################################################
 print('input data:  ' + infile)
 print('population:  ' + str(population))
 print('generations: ' + str(generations))
 print('evaluation:  ' + str(evaluate))
 print('ign 2/3way:  ' + str(ig))
-
+stats = trees = fitness = False
 pop, stats, hof, logbook = hibachi(population,generations,rseed)
 best = []
 fitness = []
@@ -276,60 +292,80 @@ del df['nevals']
 #
 # sys.exit(0)
 #
-file = os.path.splitext(os.path.basename(infile))[0]
-outfile = "results-" + file + "-" + evaluate + "-" + str(rseed) + ".tsv"
+if(infile == 'random'):
+    file1 = 'random0'
+else:
+    file1 = os.path.splitext(os.path.basename(infile))[0]
+outfile = "results-" + file1 + "-" + evaluate + "-" + str(rseed) + ".txt"
 print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(data,labels[0][1],outfile)       # use first individual
-#
-file = os.path.splitext(os.path.basename(infile))[0]
-statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
-print('saving stats to', statfile)
-IO.plot_stats(df,statfile)
-#
-#print('saving tree plots to tree_##.pdf')
-#IO.plot_trees(best)
-#
-outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
-print('saving fitness plot to', outfile)
-IO.plot_fitness(fitness,outfile)
+
+if stats == True:
+    file = os.path.splitext(os.path.basename(infile))[0]
+    statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    print('saving stats to', statfile)
+    IO.plot_stats(df,statfile)
+
+if trees == True:
+    print('saving tree plots to tree_##.pdf')
+    IO.plot_trees(best)
+
+if fitness == True:
+    outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    print('saving fitness plot to', outfile)
+    IO.plot_fitness(fitness,outfile)
 #
 # test results against other data
 #
-#all_igsums.append(np.array([0,0,0,0,0,0,0,0,0,0]))
-files = glob.glob('data/in*')
-files.sort()
-D = [0] * len(files)
-X = [0] * len(files)
-#Dr,Xr = IO.read_file('data/rotated01-3.tsv') # rotated from input3.tsv
-print()
-#print('input file: rotated01-3.tsv')
-#print("best[0]", evalData(best[0],Xr), end="\t")
-#print('best[1]', evalData(best[1],Xr))
+if rdf_count == 0:
+    files = glob.glob('data/in*')
+    files.sort()
+    D = [0] * len(files)
+    X = [0] * len(files)
+else:
+    D = [0] * rdf_count
+    X = [0] * rdf_count
 #
 #  Test remaining data files with top 2 best individuals
 #
-print('number of files:',len(files))
-for i in range(len(files)):
-    if files[i] == infile: continue
-    D[i],X[i] = IO.read_file(files[i]) #  new data file
-    print()
-    print('input file:', files[i])
-    print('best[0]', evalData(best[0],X[i]))
-    print('best[1]', evalData(best[1],X[i]))
+if(infile == 'random' or rdf_count > 0):
+    print('number of random data to generate:',rdf_count)
+    for i in range(rdf_count):
+        D[i],X[i] = IO.get_random_data(rows,cols)
+        nfile = 'random' + str(i+1)
+        print(nfile)
+        outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
+        print('best[0]', evalData(best[0],X[i]))
+        print(outfile)
+        IO.create_file(D[i],labels[-1][1],outfile)
+else:
+    print('number of files:',len(files))
+    for i in range(len(files)):
+        if files[i] == infile: continue
+        nfile = os.path.splitext(os.path.basename(files[i]))[0]
+        print(infile)
+        print()
+        D[i],X[i] = IO.read_file(files[i]) #  new data file
+        print('input file:', files[i])
+        print('best[0]', evalData(best[0],X[i]))
+        outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
+        print(outfile)
+        IO.create_file(D[i],labels[-1][1],outfile)
+#   print(labels[-1][1])
+#   print('best[1]', evalData(best[1],X[i]))
 
 print()
 print('NORMAL evaluation (original input file):')
 print()
-#all_igsums.append(np.array([0,0,0,0,0,0,0,0,0,0]))
 evaluate = 'normal'
 print('input file:', infile)
 print('best[0]', evalData(best[0],x))
-print('best[1]', evalData(best[1],x))
-print()
+#print('best[1]', evalData(best[1],x))
+#print()
 
-print('tree-0', best[0])
-print('tree-1', best[1])
+#print('tree-0', best[0])
+#print('tree-1', best[1])
 #
 # save for manual processing
 #
@@ -339,8 +375,8 @@ print('tree-1', best[1])
 #
 #  Plot standard deviations
 #
-std_igsums = np.array([])
-for i in range(len(all_igsums)):
-    std_igsums = np.append(std_igsums, np.std(all_igsums[i]))
-infile = os.path.splitext(os.path.basename(infile))[0]
-IO.plot_hist(std_igsums,evaluate,infile,rseed)
+#std_igsums = np.array([])
+#for i in range(len(all_igsums)):
+#    std_igsums = np.append(std_igsums, np.std(all_igsums[i]))
+#infile = os.path.splitext(os.path.basename(infile))[0]
+#IO.plot_hist(std_igsums,evaluate,infile,rseed)
