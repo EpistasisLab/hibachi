@@ -26,6 +26,7 @@ from mdr.utils import three_way_information_gain as three_way_ig
 from mdr.utils import two_way_information_gain as two_way_ig
 import IO
 import evals
+import plots
 import itertools
 import glob
 import numpy as np
@@ -55,6 +56,9 @@ rdf_count = options['random_data_files']
 ig = options['information_gain']
 rows = options['rows']
 cols = options['columns']
+Stats = options['statistics']
+Trees = options['trees']
+Fitness = options['fitness']
 
 if(options['seed'] == -999):
     rseed = random.randint(1,1000)
@@ -184,7 +188,8 @@ def evalData(individual, training_data):
             xsub = evals.subsets(x1,percent)
 
         elif evaluate == 'noise': 
-            xsub = evals.addnoise(x1,percent)
+#           xsub = evals.addnoise(x1,percent)
+            xsub = evals.addnoise1(x1,percent) # +1 version
 
         else:  # normal
             xsub = x1
@@ -263,7 +268,7 @@ print('population:  ' + str(population))
 print('generations: ' + str(generations))
 print('evaluation:  ' + str(evaluate))
 print('ign 2/3way:  ' + str(ig))
-stats = trees = fitness = False
+
 pop, stats, hof, logbook = hibachi(population,generations,rseed)
 best = []
 fitness = []
@@ -301,20 +306,20 @@ print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(data,labels[0][1],outfile)       # use first individual
 
-if stats == True:
-    file = os.path.splitext(os.path.basename(infile))[0]
+file = os.path.splitext(os.path.basename(infile))[0]
+if Stats == True:
     statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
     print('saving stats to', statfile)
-    IO.plot_stats(df,statfile)
+    plots.plot_stats(df,statfile)
 
-if trees == True:
+if Trees == True:
     print('saving tree plots to tree_##.pdf')
-    IO.plot_trees(best)
+    plots.plot_trees(best)
 
-if fitness == True:
+if Fitness == True:
     outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
     print('saving fitness plot to', outfile)
-    IO.plot_fitness(fitness,outfile)
+    plots.plot_fitness(fitness,outfile)
 #
 # test results against other data
 #
@@ -379,4 +384,4 @@ print('best[0]', evalData(best[0],x))
 #for i in range(len(all_igsums)):
 #    std_igsums = np.append(std_igsums, np.std(all_igsums[i]))
 #infile = os.path.splitext(os.path.basename(infile))[0]
-#IO.plot_hist(std_igsums,evaluate,infile,rseed)
+#plots.plot_hist(std_igsums,evaluate,infile,rseed)
