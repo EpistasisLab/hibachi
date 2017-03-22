@@ -21,11 +21,6 @@
 #       CREATED:  02/06/2017 14:54:24 EST
 #      REVISION:  Mon Mar 20 09:57:07 EDT 2017
 #==============================================================================
-import matplotlib
-import matplotlib.pyplot as plt
-import networkx as nx
-from networkx.drawing.nx_agraph import graphviz_layout
-from deap import gp
 import pandas as pd
 import csv
 import numpy as np
@@ -59,6 +54,12 @@ def get_arguments():
             help="random data rows (default=1000)")
     parser.add_argument("-C", "--columns", type=int, 
             help="random data columns (default=3)")
+    parser.add_argument("-S", "--statistics", 
+            help="plot statistics",action='store_true')
+    parser.add_argument("-T", "--trees", 
+            help="plot best individual trees",action='store_true')
+    parser.add_argument("-F", "--fitness", 
+            help="plot fitness results",action='store_true')
 
 
     args = parser.parse_args()
@@ -111,70 +112,22 @@ def get_arguments():
     else:
         options['columns'] = args.columns
 
-    return options
-###############################################################################
-def plot_trees(best):
-    """ create tree plots from best array """
-    for i in range(len(best)):
-        nodes, edges, labels = gp.graph(best[i])
-        matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
+    if(args.statistics):
+        options['statistics'] = True
+    else:
+        options['statistics'] = False
 
-        g = nx.Graph()
-        g.add_nodes_from(nodes)
-        g.add_edges_from(edges)
-        pos = graphviz_layout(g, prog="dot")
-    
-        f = plt.figure()
-        nx.draw_networkx_nodes(g, pos, node_size=1500, 
-                               font_size=8, node_color='lightblue')
-        nx.draw_networkx_edges(g, pos)
-        nx.draw_networkx_labels(g, pos, labels, font_size=8)
-        if (i < 10):
-            plotfile = "tree_0" + str(i) + ".pdf"
-        else:    
-            plotfile = "tree_" + str(i) + ".pdf"
-        plt.title(str(best[i]))
-        f.savefig(plotfile)
-###############################################################################
-def plot_stats(df,statfile):
-    matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
-    ax = df.plot()
-    fig = ax.get_figure()
-    fig.savefig(statfile)
-###############################################################################
-def plot_fitness(fit,fname):
-    fitdf = pd.DataFrame(fit, columns=['Fitness', 'GP Tree Size'])
-    ax = fitdf.plot(x='GP Tree Size', y='Fitness', kind='scatter')
-    fig = ax.get_figure()
-    fig.savefig(fname)
-###############################################################################
-def plot_bars(objects, evaluate, best0, best1, infile, rndnum):
-    width = 0.35
-    y_pos = np.arange(len(objects))
-    f = plt.figure()
-    plt.bar(y_pos, best0, width, color='b', align='center', 
-            alpha=0.5, label='best[0]');
-    plt.bar(y_pos+width, best1, width, color='g', align='center', 
-            alpha=0.5, label='best[1]');
-    plt.xticks(y_pos, objects);
-    title = evaluate + ' - ' + infile[:7] + " - rseed: " + rndnum
-    plotfile = evaluate + '-' + infile[:7] + "-rseed-" + rndnum + '.pdf'
-    plt.title(title);
-    plt.legend(loc='upper right')
-    plt.ylim(0,1,.05)
-    f.savefig(plotfile)
-###############################################################################
-def plot_hist(data, evaluate, infile, rndnum):
-    f = plt.figure()
-    count = len(data)
-    plt.hist(data, 200, normed=1, alpha=0.75)
-    xlab = "Standard Deviation (" + str(count) + ")"
-    plt.xlabel(xlab);
-    plt.ylabel('Count');
-    title = ("std - " + evaluate + " - " + infile + ' - rseed: ' + str(rndnum))
-    plotfile = ("std-"+evaluate+"-"+infile+'-rseed-'+str(rndnum)+'.pdf')
-    plt.title(title);
-    f.savefig(plotfile)
+    if(args.trees):
+        options['trees'] = True
+    else:
+        options['trees'] = False
+
+    if(args.fitness):
+        options['fitness'] = True
+    else:
+        options['fitness'] = False
+
+    return options
 ###############################################################################
 def get_random_data(rows, cols):
     data = np.random.randint(0,3,size=(rows,cols))
@@ -219,45 +172,6 @@ def read_file_np(fname):
     data = np.genfromtxt(fname, dtype=np.int, delimiter='\t') 
     x = data.transpose()
     return data.tolist(), x.tolist()
-###############################################################################
-def subsets(x,percent):
-    """ take a subset of "percent" of x """
-    p = percent / 100
-    xa = np.array(x)
-    subsample_indices = np.random.choice(xa.shape[1], int(xa.shape[1] * p), 
-                                         replace=False)
-    return (xa[:, subsample_indices]).tolist()
-###############################################################################
-def getfolds(data,num):
-    """ return num folds of size 1/num'th of x """
-    folds = []
-    fsize = end = int(len(data) / num)
-    xa = np.array(data)
-    np.random.shuffle(xa)
-    xa = xa.transpose()
-    start = 0
-    for i in range(num):
-        folds.append(xa[:,start:end])
-        start += fsize
-        end += fsize  
-    return folds
-###############################################################################
-def addnoise(x,pcnt):
-    """ add some percentage of noise to data """
-    xa = np.array(x)
-    val = pcnt/100
-    rep = {}
-    rep[0] = [1,2]
-    rep[1] = [0,2]
-    rep[2] = [0,1]
-
-    for i in range(len(xa)):
-        indices = np.random.choice(xa.shape[1], int(xa.shape[1] * val), 
-                                   replace=False)
-        for j in list(indices):
-            xa[i][j] = np.random.choice(rep[xa[i][j]])
-
-    return xa.tolist()
 ###############################################################################
 def addone(d):
     a = np.array(d)

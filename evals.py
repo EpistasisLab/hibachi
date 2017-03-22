@@ -55,3 +55,20 @@ def addnoise(x,pcnt):
 
     return xa.tolist()
 ###############################################################################
+def addnoise1(x,pcnt):
+    """ add some percentage of noise to data (for +1 data) """
+    xa = np.array(x)
+    val = pcnt/100
+    rep = {}
+    rep[1] = [2,3]
+    rep[2] = [1,3]
+    rep[3] = [1,2]
+
+    for i in range(len(xa)):
+        indices = np.random.choice(xa.shape[1], int(xa.shape[1] * val), 
+                                   replace=False)
+        for j in list(indices):
+            xa[i][j] = np.random.choice(rep[xa[i][j]])
+
+    return xa.tolist()
+###############################################################################
