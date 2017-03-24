@@ -3,7 +3,7 @@
 #
 #          FILE:  operators.py
 # 
-#         USAGE:  import operators as op
+#         USAGE:  import operators as op (from hib.py)
 # 
 #   DESCRIPTION:  math/logic operations for hibachi via deap 
 # 
@@ -12,11 +12,12 @@
 #                     not needed on unary operations
 #        UPDATE:  Floats are dealt with as necessary for functions
 #                 that require ints
+#                 170216: added try/except to safediv()
 #        AUTHOR:  Peter R. Schmitt (@HOME), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.1
 #       CREATED:  09/29/2016 10:39:21 EDT
-#      REVISION:  Wed Feb  1 11:23:08 EST 2017
+#      REVISION:  Tue Feb 14 13:09:23 EST 2017
 #===========================================================================
 
 import numpy as np
@@ -37,8 +38,11 @@ def safediv(a,b):
         returns 1 """
     if(b == 0):
         return 1
-    else:
-        return a / float(b)
+    try:
+        c = a / b
+    except:
+        c = 1
+    return c
 #----------------------------------#
 def plus_mod_two(a,b):
     """ take absolute value of a + b
@@ -106,15 +110,14 @@ def bitxor(a,b):
     return int(a) ^ int(b)
 ######################## UNARY OPERATORS ###############################
 def ABS(a):
+    """ UNUSED: return absolute value """
     return op.abs(a)
 #----------------------------------#
 def factorial(a):
     """ returns 0 if a >= 100 """
     a = abs(round(a))
-    if(a < 100):
-        return math.factorial(a)
-    else:
-        return 0
+    a = min(a, 100)
+    return math.factorial(a)
 #----------------------------------#
 def NOT(a):
     """ if a eq 0 return 1
@@ -139,6 +142,7 @@ def logEofA(a):
 def power(a,b):
     """ return a to the power of b """
     a = abs(a)  # ensure the denial of complex number creation
+    b = min(b,100)
     try:
         z = a ** b
     except:
@@ -157,10 +161,8 @@ def permute(a,b):
     b = abs(round(b))
     if(b > a):
         a, b = b, a
-    if(a < 100):
-        return math.factorial(a) / math.factorial(a-b)
-    else:
-        return 0
+
+    return factorial(a) / factorial(a-b)
 #----------------------------------#
 def choose(a,b):
     """ n Choose r function """
@@ -168,10 +170,8 @@ def choose(a,b):
     b = op.abs(round(b))
     if(b > a):
         a, b = b, a
-    if(a < 100):
-        return math.factorial(a) / (math.factorial(b) * math.factorial(a-b))
-    else:
-        return 0
+
+    return factorial(a) / (factorial(b) * factorial(a-b))
 #----------------------------------#
 def constrainForLog(value):
     """ used by log methods """
@@ -183,20 +183,18 @@ def constrainForLog(value):
         return value
 ######################### MISC OPERATORS ###############################
 def minimum(a,b):
-    """ return the smallest value of a and b """
+    """ UNUSED: return the smallest value of a and b """
     if(a < b):
         return a
     else:
         return b
-#return min(float(a),float(b)) 
 #----------------------------------#
 def maximum(a,b):
-    """ return the largest value of a and b """
+    """ UNUSED: return the largest value of a and b """
     if(a > b):
         return a
     else:
         return b
-#return max(a,b) 
 #----------------------------------#
 def left(a, b):
     """ return left value """
@@ -205,8 +203,3 @@ def left(a, b):
 def right(a, b):
     """ return right value """
     return b
-########################################################################
-def printf(format, *args):
-    import sys
-    sys.stdout.write(format % args)
-    sys.stdout.flush()
