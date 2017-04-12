@@ -7,14 +7,16 @@
 # 
 #   DESCRIPTION:  evaluation routines
 # 
-#       UPDATES:  
+#       UPDATES:  170339: removed shuffle from getfolds()
+#                 170410: added reclass()
 #        AUTHOR:  Pete Schmitt (hershey), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.1
+#       VERSION:  0.1.2
 #       CREATED:  Sun Mar 19 11:34:09 EDT 2017
-#      REVISION:  
+#      REVISION:  Mon Apr 10 16:17:29 CDT 2017
 #==============================================================================
 import numpy as np
+import pandas as pd
 ###############################################################################
 def subsets(x,percent):
     """ take a subset of "percent" of x """
@@ -24,13 +26,11 @@ def subsets(x,percent):
                                          replace=False)
     return (xa[:, subsample_indices]).tolist()
 ###############################################################################
-def getfolds(data,num):
+def getfolds(x, num):
     """ return num folds of size 1/num'th of x """
     folds = []
-    fsize = end = int(len(data) / num)
-    xa = np.array(data)
-    np.random.shuffle(xa)
-    xa = xa.transpose()
+    fsize = end = int(len(x[0]) / num)
+    xa = np.array(x)
     start = 0
     for i in range(num):
         folds.append(xa[:,start:end])
@@ -72,3 +72,17 @@ def addnoise1(x,pcnt):
 
     return xa.tolist()
 ###############################################################################
+def reclass(x, result, pct):
+    """ reclassify data """
+    d = np.array(x).transpose()
+    df = pd.DataFrame(d, columns=['X0','X1','X2'])
+    df['Class'] = result
+    df.sort_values('Class', ascending=True, inplace=True)
+    
+    dflen = len(df)
+    cntl_cnt = dflen - int(dflen * (pct/100.0))
+    df.loc[:cntl_cnt, 'Class'] = 0
+    df.loc[cntl_cnt:, 'Class'] = 1
+    
+    df.sort_index(inplace=True)  # put data back in index order
+    return df['Class'].tolist()

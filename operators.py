@@ -31,7 +31,11 @@ def modulus(a,b):
     if(b == 0):
         return 1
     else:
-        return abs(a) % b
+        try:
+            c = abs(a) % b
+        except:
+            c = 1
+        return c
 #----------------------------------#
 def safediv(a,b):
     """ a divided by b if b != 0 else
@@ -47,7 +51,11 @@ def safediv(a,b):
 def plus_mod_two(a,b):
     """ take absolute value of a + b
         and mod result with 2 """
-    return abs(a + b) % 2
+    try:
+        c = abs(a + b) % 2
+    except:
+        c = 1
+    return c
 #----------------------------------#
 def addition(a,b):
     """ return sum of a and b """
@@ -175,7 +183,7 @@ def choose(a,b):
 #----------------------------------#
 def constrainForLog(value):
     """ used by log methods """
-    if(float(value) < 0):
+    if(value < 0):
         return abs(value)
     elif(value == 0):
         return 1

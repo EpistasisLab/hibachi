@@ -15,11 +15,13 @@
 #                 170313: modified to use IO.get_arguments()
 #                 170319: modified to use evals for evaluations
 #                 170320: modified to add 1 to data elements before processing
+#                 170323: added options for plotting
+#                 170410: added call to evals.reclass() in evalData()
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.6
+#       VERSION:  0.1.8
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Mar 20 13:28:00 EDT 2017
+#      REVISION:  Mon Apr 10 16:13:33 CDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from mdr.utils import three_way_information_gain as three_way_ig
@@ -59,33 +61,34 @@ cols = options['columns']
 Stats = options['statistics']
 Trees = options['trees']
 Fitness = options['fitness']
-
+prcnt = options['percent']
+#
+# set up random seed
+#
 if(options['seed'] == -999):
     rseed = random.randint(1,1000)
-    random.seed(rseed)
 else:
     rseed = options['seed']
-    random.seed(rseed)
+random.seed(rseed)
+np.random.seed(rseed)
 #
 # Read/create the data and put it in a list of lists.
 # x is transposed view of data
 #
 if infile == 'random':
-    data, x = IO.get_random_data(rows,cols)
+    data, x = IO.get_random_data(rows,cols,rseed)
 else:
     data, x = IO.read_file_np(infile)
     rows = len(data)
     cols = len(x)
 
 inst_length = len(x)
+keepX = np.array(x).tolist()
+keepData = np.array(data).tolist()
 ###############################################################################
 # defined a new primitive set for strongly typed GP
 pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length), 
-                            bool, "X")
-# boolean operators 
-pset.addPrimitive(op.and_, [bool, bool], bool)
-pset.addPrimitive(op.or_, [bool, bool], bool)
-pset.addPrimitive(op.not_, [bool], bool)
+                            float, "X")
 # basic operators 
 pset.addPrimitive(op.add, [float,float], float)
 pset.addPrimitive(op.sub, [float,float], float)
@@ -94,28 +97,33 @@ pset.addPrimitive(ops.safediv, [float,float], float)
 pset.addPrimitive(ops.modulus, [float,float], float)
 pset.addPrimitive(ops.plus_mod_two, [float,float], float)
 # logic operators 
-pset.addPrimitive(op.lt, [float, float], bool)
-pset.addPrimitive(op.le, [float, float], bool)
-pset.addPrimitive(op.ne, [float, float], bool)
-pset.addPrimitive(op.gt, [float, float], bool)
-pset.addPrimitive(op.ge, [float, float], bool)
-pset.addPrimitive(op.eq, [float, float], bool)
+pset.addPrimitive(ops.gt, [float, float], float)
+pset.addPrimitive(ops.lt, [float, float], float)
+pset.addPrimitive(ops.AND, [float, float], float)
+pset.addPrimitive(ops.OR, [float, float], float)
 pset.addPrimitive(ops.xor, [float,float], float)
+#pset.addPrimitive(op.eq, [float, float], bool)
+#pset.addPrimitive(op.le, [float, float], bool)
+#pset.addPrimitive(op.ne, [float, float], bool)
+#pset.addPrimitive(op.ge, [float, float], bool)
 # Define a new if-then-else function
-def if_then_else(input, output1, output2):
-    if input: return output1
-    else: return output2
-pset.addPrimitive(if_then_else, [bool, float, float], float)
+#def if_then_else(input, output1, output2):
+#    if input: return output1
+#    else: return output2
+#pset.addPrimitive(if_then_else, [bool, float, float], float)
 # bitwise operators 
 pset.addPrimitive(ops.bitand, [float,float], float)
 pset.addPrimitive(ops.bitor, [float,float], float)
 pset.addPrimitive(ops.bitxor, [float,float], float)
 # unary operators 
 pset.addPrimitive(op.abs, [float], float)
+pset.addPrimitive(ops.NOT, [float], float)
 pset.addPrimitive(ops.factorial, [float], float)
-pset.addPrimitive(ops.log10ofA, [float], float)
-pset.addPrimitive(ops.log2ofA, [float], float)
-pset.addPrimitive(ops.logEofA, [float], float)
+pset.addPrimitive(ops.left, [float,float], float)
+pset.addPrimitive(ops.right, [float,float], float)
+#pset.addPrimitive(ops.log10ofA, [float], float)
+#pset.addPrimitive(ops.log2ofA, [float], float)
+#pset.addPrimitive(ops.logEofA, [float], float)
 # large operators 
 pset.addPrimitive(ops.power, [float,float], float)
 pset.addPrimitive(ops.logAofB, [float,float], float)
@@ -124,13 +132,11 @@ pset.addPrimitive(ops.choose, [float,float], float)
 # misc operators 
 pset.addPrimitive(min, [float,float], float)
 pset.addPrimitive(max, [float,float], float)
-pset.addPrimitive(ops.left, [float,float], float)
-pset.addPrimitive(ops.right, [float,float], float)
 # terminals 
 randval = "rand" + str(random.random())[2:]  # so it can rerun from ipython
 pset.addEphemeralConstant(randval, lambda: random.random() * 100, float)
-pset.addTerminal(False, bool)
-pset.addTerminal(True, bool)
+pset.addTerminal(0.0, float)
+pset.addTerminal(1.0, float)
 # creator 
 creator.create("FitnessMulti", base.Fitness, weights=(1.0, -1.0))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMulti)
@@ -144,29 +150,29 @@ toolbox.register("compile", gp.compile, pset=pset)
 ##############################################################################
 def evalData(individual, training_data):
     """ evaluate the individual """
-    result = list()
+    result = []
     igsums = np.array([])
     x = training_data
     # add 1 to data
-    x1 = IO.addone(x)
+#   x1 = IO.addone(x)
+
     # Transform the tree expression in a callable function
     func = toolbox.compile(expr=individual)
 
     # Create class possibility.  
     # If class has a unique length of 1, toss it.
     try:
-        result = [int(func(*inst[:inst_length])) for inst in data]
+        result = [(func(*inst[:inst_length])) for inst in data]
     except:
         return -sys.maxsize, sys.maxsize
 
     if (len(np.unique(result)) == 1):
         return -sys.maxsize, sys.maxsize
     
+     
     if evaluate == 'folds':
-        rangeval = 10
-        numfolds = 10
-        d1 = IO.xpose(x1)
-        folds = evals.getfolds(d1, numfolds)
+        rangeval = numfolds = 10  # must be equal
+        folds = evals.getfolds(x, numfolds)
 
     elif evaluate == 'subsets':
         rangeval = 10
@@ -178,21 +184,23 @@ def evalData(individual, training_data):
 
     else:  # normal 
         rangeval = 1
-        
+    
+    result = evals.reclass(x, result, prcnt)
+
     for m in range(rangeval):
         igsum = 0 
         if evaluate == 'folds': 
             xsub = list(folds[m])
 
         elif evaluate == 'subsets': 
-            xsub = evals.subsets(x1,percent)
+            xsub = evals.subsets(x,percent)
 
         elif evaluate == 'noise': 
-#           xsub = evals.addnoise(x1,percent)
-            xsub = evals.addnoise1(x1,percent) # +1 version
+            xsub = evals.addnoise(x,percent)
+#           xsub = evals.addnoise1(x1,percent) # +1 version
 
         else:  # normal
-            xsub = x1
+            xsub = x
     
         # Calculate information gain between data columns and result
         # and return mean of these calculations
@@ -219,6 +227,7 @@ def evalData(individual, training_data):
             return igsum, len(individual)
         else:
             return igsum_avg, len(individual)
+
 ##############################################################################
 toolbox.register("evaluate", evalData, training_data=x)
 toolbox.register("select", tools.selNSGA2)
@@ -247,6 +256,8 @@ def hibachi(pop,gen,rseed):
         then start the process """
     MU, LAMBDA = pop, pop
     NGEN = gen 
+    np.random.seed(rseed)
+    random.seed(rseed)
     pop = toolbox.population(n=MU)
     hof = tools.ParetoFront(similar=pareto_eq)
     stats = tools.Statistics(lambda ind: max(ind.fitness.values[0],0))
@@ -268,6 +279,8 @@ print('population:  ' + str(population))
 print('generations: ' + str(generations))
 print('evaluation:  ' + str(evaluate))
 print('ign 2/3way:  ' + str(ig))
+print('random seed: ' + str(rseed))
+print('cases percent: ' + str(prcnt) + '%')
 
 pop, stats, hof, logbook = hibachi(population,generations,rseed)
 best = []
@@ -301,7 +314,8 @@ if(infile == 'random'):
     file1 = 'random0'
 else:
     file1 = os.path.splitext(os.path.basename(infile))[0]
-outfile = "results-" + file1 + "-" + evaluate + "-" + str(rseed) + ".txt"
+outfile = "results-" + file1 + "-" + evaluate + "-" + str(rseed) 
+outfile = outfile + "-ig" + str(ig) + "way.txt" 
 print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(data,labels[0][1],outfile)       # use first individual
@@ -337,7 +351,9 @@ else:
 if(infile == 'random' or rdf_count > 0):
     print('number of random data to generate:',rdf_count)
     for i in range(rdf_count):
-        D[i],X[i] = IO.get_random_data(rows,cols)
+        rseed += 1
+        D[i],X[i] = IO.get_random_data(rows,cols,rseed)
+        print((np.array(X[i]) == np.array(x)).all())
         nfile = 'random' + str(i+1)
         print(nfile)
         outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
@@ -357,15 +373,14 @@ else:
         outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
         print(outfile)
         IO.create_file(D[i],labels[-1][1],outfile)
-#   print(labels[-1][1])
-#   print('best[1]', evalData(best[1],X[i]))
 
 print()
-print('NORMAL evaluation (original input file):')
-print()
-evaluate = 'normal'
-print('input file:', infile)
-print('best[0]', evalData(best[0],x))
+#print('NORMAL evaluation (original input file):')
+#print('FOLDS re-evaluation (original input file):')
+#print()
+#evaluate = 'normal'
+#print('input file:', infile)
+#print('best[0]', evalData(best[0],x))
 #print('best[1]', evalData(best[1],x))
 #print()
 

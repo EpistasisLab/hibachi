@@ -15,11 +15,13 @@
 #                 170302: added plot_hist() to plot std
 #                 170313: added get_arguments()
 #                 170319: added addone()
+#                 170329: added np.random.shuffle() to read_file_np() 
+#                 170410: added option for case percentage
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.1
+#       VERSION:  0.1.10
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Mar 20 09:57:07 EDT 2017
+#      REVISION:  Mon Apr 10 16:16:10 CDT 2017
 #==============================================================================
 import pandas as pd
 import csv
@@ -60,7 +62,8 @@ def get_arguments():
             help="plot best individual trees",action='store_true')
     parser.add_argument("-F", "--fitness", 
             help="plot fitness results",action='store_true')
-
+    parser.add_argument("-P", "--percent", type=int,
+            help="percentage of case for case/control (default=25)")
 
     args = parser.parse_args()
 
@@ -77,6 +80,11 @@ def get_arguments():
     else:
         options['seed'] = args.seed
 
+    if(args.percent == None):
+        options['percent'] = 25
+    else:
+        options['percent'] = args.percent
+        
     if(args.population == None):
         options['population'] = 100
     else:
@@ -129,7 +137,9 @@ def get_arguments():
 
     return options
 ###############################################################################
-def get_random_data(rows, cols):
+def get_random_data(rows, cols, seed=None):
+    """ return randomly generated data is shape passed in """
+    if seed != None: np.random.seed(seed)
     data = np.random.randint(0,3,size=(rows,cols))
     x = data.transpose()
     return data.tolist(), x.tolist()
@@ -170,6 +180,7 @@ def read_file_np(fname):
         data = rows of instances
         x is data transposed to rows of features """
     data = np.genfromtxt(fname, dtype=np.int, delimiter='\t') 
+    np.random.shuffle(data) # give the data a good row shuffle
     x = data.transpose()
     return data.tolist(), x.tolist()
 ###############################################################################
