@@ -22,6 +22,25 @@ from deap import gp
 import numpy as np
 import pandas as pd
 ###############################################################################
+def plot_tree(best,rseed):
+    """ create tree plots from best array """
+    nodes, edges, labels = gp.graph(best)
+    matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
+
+    g = nx.Graph()
+    g.add_nodes_from(nodes)
+    g.add_edges_from(edges)
+    pos = graphviz_layout(g, prog="dot")
+    
+    f = plt.figure()
+    nx.draw_networkx_nodes(g, pos, node_size=1500, 
+                           font_size=8, node_color='lightblue')
+    nx.draw_networkx_edges(g, pos)
+    nx.draw_networkx_labels(g, pos, labels, font_size=8)
+    plotfile = "tree_" + str(rseed) + ".pdf"
+    plt.title(str(best))
+    f.savefig(plotfile)
+###############################################################################
 def plot_trees(best):
     """ create tree plots from best array """
     for i in range(len(best)):

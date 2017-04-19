@@ -9,11 +9,13 @@
 # 
 #       UPDATES:  170339: removed shuffle from getfolds()
 #                 170410: added reclass()
+#                 170417: renamed reclass() to reclass_result()
+#                         reworked reclass_result()
 #        AUTHOR:  Pete Schmitt (hershey), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.2
 #       CREATED:  Sun Mar 19 11:34:09 EDT 2017
-#      REVISION:  Mon Apr 10 16:17:29 CDT 2017
+#      REVISION:  Mon Apr 17 14:48:42 EDT 2017
 #==============================================================================
 import numpy as np
 import pandas as pd
@@ -55,24 +57,7 @@ def addnoise(x,pcnt):
 
     return xa.tolist()
 ###############################################################################
-def addnoise1(x,pcnt):
-    """ add some percentage of noise to data (for +1 data) """
-    xa = np.array(x)
-    val = pcnt/100
-    rep = {}
-    rep[1] = [2,3]
-    rep[2] = [1,3]
-    rep[3] = [1,2]
-
-    for i in range(len(xa)):
-        indices = np.random.choice(xa.shape[1], int(xa.shape[1] * val), 
-                                   replace=False)
-        for j in list(indices):
-            xa[i][j] = np.random.choice(rep[xa[i][j]])
-
-    return xa.tolist()
-###############################################################################
-def reclass(x, result, pct):
+def reclass_result(x, result, pct):
     """ reclassify data """
     d = np.array(x).transpose()
     df = pd.DataFrame(d, columns=['X0','X1','X2'])
@@ -81,8 +66,9 @@ def reclass(x, result, pct):
     
     dflen = len(df)
     cntl_cnt = dflen - int(dflen * (pct/100.0))
-    df.loc[:cntl_cnt, 'Class'] = 0
-    df.loc[cntl_cnt:, 'Class'] = 1
-    
+    c = np.zeros(dflen, dtype=np.int)
+    c[cntl_cnt:] = 1
+
+    df.Class = c
     df.sort_index(inplace=True)  # put data back in index order
     return df['Class'].tolist()

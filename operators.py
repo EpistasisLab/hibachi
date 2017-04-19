@@ -23,7 +23,7 @@
 import numpy as np
 import math
 import operator as op
-
+Largest = math.factorial(170)
 ###################### BASIC OPERATORS #################################
 def modulus(a,b):
     """ if b != 0 return absolute value of (a) % b
@@ -46,6 +46,10 @@ def safediv(a,b):
         c = a / b
     except:
         c = 1
+
+    if c > Largest:
+        return Largest
+
     return c
 #----------------------------------#
 def plus_mod_two(a,b):
@@ -59,7 +63,12 @@ def plus_mod_two(a,b):
 #----------------------------------#
 def addition(a,b):
     """ return sum of a and b """
-    return a + b
+    c = a + b
+
+    if c > Largest:
+        return Largest
+
+    return c
 #----------------------------------#
 def subtract(a,b):
     """ returns the difference between
@@ -68,7 +77,12 @@ def subtract(a,b):
 #----------------------------------#
 def multiply(a,b):
     """ returns the multiple of a and b """
-    return a * b
+    c = a * b
+
+    if c > Largest:
+        return Largest
+
+    return c
 ###################### LOGIC OPERATORS #################################
 def lt(a,b):
     """ return 1 if True, else 0 """
@@ -155,6 +169,9 @@ def power(a,b):
         z = a ** b
     except:
         z = 1
+    if z > Largest:
+        return Largest
+
     return z
 #----------------------------------#
 def logAofB(a,b):

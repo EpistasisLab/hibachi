@@ -144,38 +144,12 @@ def get_random_data(rows, cols, seed=None):
     x = data.transpose()
     return data.tolist(), x.tolist()
 ###############################################################################
-def create_file(data,label,outfile):
-    """ append label as column to data then write out file with header """
-    for i in range(len(data)):
-        data[i].append(label[i])
-        
-    # create header
-    header = []
-    for i in range(len(data[0])-1):
-        header.append('X' + str(i))
-    header.append('Class')
-        
-    # print data to results.tsv
-    datadf = pd.DataFrame(data,columns=header) # convert to DF
-    datadf.to_csv(outfile, sep='\t', index=False)
+def create_file(x,result,outfile):
+    df = pd.DataFrame(np.array(x).transpose(), columns=['X0','X1','X2'])
+    df['Class'] = result
+    df.to_csv(outfile, sep='\t', index=False)
 ###############################################################################
 def read_file(fname):
-    """ UNUSED: return both data and x
-        data = rows of instances
-        x is data transposed to rows of features """
-    with open(fname) as data:
-        dataReader = csv.reader(data, delimiter='\t')
-        data = list(list(int(elem) for elem in row) for row in dataReader)
-    #transpose into x
-    inst_length = len(data[0])
-    x = []
-    for i in range(inst_length):
-        y = [col[i] for col in data]
-        x.append(y)
-    del y
-    return data, x
-###############################################################################
-def read_file_np(fname):
     """ return both data and x
         data = rows of instances
         x is data transposed to rows of features """
@@ -183,19 +157,6 @@ def read_file_np(fname):
     np.random.shuffle(data) # give the data a good row shuffle
     x = data.transpose()
     return data.tolist(), x.tolist()
-###############################################################################
-def addone(d):
-    a = np.array(d)
-    a += 1
-    return a.tolist()
-###############################################################################
-def xpose(d):
-    """ transpose list of lists """
-    x = []
-    for i in range(len(d[0])):
-        y = [col[i] for col in d]
-        x.append(y)
-    return x
 ###############################################################################
 def printf(format, *args):
     """ works just like the C/C++ printf function """
