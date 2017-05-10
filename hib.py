@@ -18,11 +18,13 @@
 #                 170323: added options for plotting
 #                 170410: added call to evals.reclass_result() in evalData()
 #                 170417: reworked post processing of new random data tests
+#                 170422: added ability for output directory selection
+#                         directory is created if it doesn't exist
 #        AUTHOR:  Pete Schmitt (discovery), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.9
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Apr 17 14:47:04 EDT 2017
+#      REVISION:  Sat Apr 22 13:51:43 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from mdr.utils import three_way_information_gain as three_way_ig
@@ -63,6 +65,7 @@ Stats = options['statistics']
 Trees = options['trees']
 Fitness = options['fitness']
 prcnt = options['percent']
+outdir = options['outdir']
 #
 # set up random seed
 #
@@ -92,7 +95,7 @@ pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length),
 # basic operators 
 pset.addPrimitive(op.add, [float,float], float)
 pset.addPrimitive(op.sub, [float,float], float)
-pset.addPrimitive(op.mul, [float,float], float)
+pset.addPrimitive(ops.multiply, [float,float], float)
 pset.addPrimitive(ops.safediv, [float,float], float)
 pset.addPrimitive(ops.modulus, [float,float], float)
 pset.addPrimitive(ops.plus_mod_two, [float,float], float)
@@ -268,7 +271,9 @@ print('evaluation:  ' + str(evaluate))
 print('ign 2/3way:  ' + str(ig))
 print('random seed: ' + str(rseed))
 print('prcnt cases: ' + str(prcnt) + '%')
-
+print('output dir:  ' + outdir)
+print()
+# Here we go...
 pop, stats, hof, logbook = hibachi(population,generations,rseed)
 best = []
 fitness = []
@@ -301,7 +306,13 @@ if(infile == 'random'):
     file1 = 'random0'
 else:
     file1 = os.path.splitext(os.path.basename(infile))[0]
-outfile = "results-" + file1 + "-" + str(rseed) + '-' 
+#
+# make output directory if it doesn't exist
+#
+if not os.path.exists(outdir):
+    os.makedirs(outdir)
+
+outfile = outdir + "results-" + file1 + "-" + str(rseed) + '-' 
 outfile += evaluate + "-" + str(ig) + "way.txt" 
 print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
@@ -327,8 +338,8 @@ if(infile == 'random' or rdf_count > 0):
         func = toolbox.compile(expr=individual)
         result = [(func(*inst[:inst_length])) for inst in D]
         nresult = evals.reclass_result(X, result, prcnt)
-        outfile = 'model_from-' + file1 + '-using-' + nfile + '-'
-        outfile += str(rseed) + '-' 
+        outfile = outdir + 'model_from-' + file1 
+        outfile += '-using-' + nfile + '-' + str(rseed) + '-' 
         outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
         print(outfile)
         IO.create_file(X,nresult,outfile)
@@ -346,7 +357,7 @@ else:
         func = toolbox.compile(expr=individual)
         result = [(func(*inst[:inst_length])) for inst in D]
         nresult = evals.reclass_result(X, result, prcnt)
-        outfile = 'model_from-' + file1 + '-using-' + nfile + '-'
+        outfile = outdir + 'model_from-' + file1 + '-using-' + nfile + '-'
         outfile += str(rseed) + '-' + nfile + '-'
         outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
         print(outfile)
@@ -356,13 +367,14 @@ else:
 #
 file = os.path.splitext(os.path.basename(infile))[0]
 if Stats == True:
-    statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    statfile = outdir + "stats-" + file + "-" + evaluate 
+    statfile += "-" + str(rseed) + ".pdf"
     print('saving stats to', statfile)
     plots.plot_stats(df,statfile)
 
 if Trees == True:
-    print('saving tree plot to tree_' + str(save_seed) + '.pdf')
-    plots.plot_tree(best[0],save_seed)
+    print('saving tree plot to ' + outdir + 'tree_' + str(save_seed) + '.pdf')
+    plots.plot_tree(best[0],save_seed,outdir)
 
 if Fitness == True:
     outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
