@@ -11,14 +11,17 @@
 #                 170410: added reclass()
 #                 170417: renamed reclass() to reclass_result()
 #                         reworked reclass_result()
+#                 170510: reclass_result() convert result to numpy array before
+#                         attaching to pandas DataFrame
 #        AUTHOR:  Pete Schmitt (hershey), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.2
+#       VERSION:  0.1.3
 #       CREATED:  Sun Mar 19 11:34:09 EDT 2017
-#      REVISION:  Mon Apr 17 14:48:42 EDT 2017
+#      REVISION:  Wed May 10 15:28:06 EDT 2017
 #==============================================================================
 import numpy as np
 import pandas as pd
+import sys
 ###############################################################################
 def subsets(x,percent):
     """ take a subset of "percent" of x """
@@ -61,10 +64,13 @@ def reclass_result(x, result, pct):
     """ reclassify data """
     d = np.array(x).transpose()
     df = pd.DataFrame(d, columns=['X0','X1','X2'])
-    df['Class'] = result
+    dflen = len(df)
+    np_result = np.array(result)
+
+    df['Class'] = np_result
+
     df.sort_values('Class', ascending=True, inplace=True)
     
-    dflen = len(df)
     cntl_cnt = dflen - int(dflen * (pct/100.0))
     c = np.zeros(dflen, dtype=np.int)
     c[cntl_cnt:] = 1
