@@ -17,11 +17,12 @@
 #                 170319: added addone()
 #                 170329: added np.random.shuffle() to read_file_np() 
 #                 170410: added option for case percentage
+#                 170420: added option for output directory
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.10
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Apr 10 16:16:10 CDT 2017
+#      REVISION:  Thu Apr 20 09:29:11 EDT 2017
 #==============================================================================
 import pandas as pd
 import csv
@@ -46,6 +47,9 @@ def get_arguments():
             help="number of generations (default=40)")
     parser.add_argument("-i", "--information_gain", type=int, 
             help="information gain 2 way or 3 way (default=2)")
+    parser.add_argument('-o', '--outdir', type=str,
+            help='name of output directory (default = .)' +
+            ' Note: the directory must exist')
     parser.add_argument("-p", "--population", type=int, 
             help="size of population (default=100)")
     parser.add_argument("-r", "--random_data_files", type=int, 
@@ -74,6 +78,11 @@ def get_arguments():
         options['file'] = args.file
         options['basename'] = os.path.basename(args.file)
         options['dir_path'] = os.path.dirname(args.file)
+
+    if(args.outdir == None):
+        options['outdir'] = "./"
+    else:
+        options['outdir'] = args.outdir + '/'
 
     if(args.seed == None):
         options['seed'] = -999
@@ -145,7 +154,12 @@ def get_random_data(rows, cols, seed=None):
     return data.tolist(), x.tolist()
 ###############################################################################
 def create_file(x,result,outfile):
-    df = pd.DataFrame(np.array(x).transpose(), columns=['X0','X1','X2'])
+    d = np.array(x).transpose()    
+    columns = [0]*np.shape(d)[0] 
+    for i in range(0,np.shape(d)[0]): # create columns names for variable number of columns.
+        columns[i] = 'X' + str(i)
+#    df = pd.DataFrame(np.array(x).transpose(), columns=['X0','X1','X2'])
+    df = pd.DataFrame(np.array(x).transpose(), columns)
     df['Class'] = result
     df.to_csv(outfile, sep='\t', index=False)
 ###############################################################################

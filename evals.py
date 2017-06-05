@@ -63,7 +63,11 @@ def addnoise(x,pcnt):
 def reclass_result(x, result, pct):
     """ reclassify data """
     d = np.array(x).transpose()
-    df = pd.DataFrame(d, columns=['X0','X1','X2'])
+    columns = [0]*np.shape(d)[0] 
+    for i in range(0,np.shape(d)[0]): # create columns names for variable number of columns.
+        columns[i] = 'X' + str(i)
+    df = pd.DataFrame(d, columns)
+#    df = pd.DataFrame(d, columns=['X0','X1','X2'])
     dflen = len(df)
     np_result = np.array(result)
 
