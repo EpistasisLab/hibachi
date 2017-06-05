@@ -23,7 +23,7 @@
 import numpy as np
 import math
 import operator as op
-
+Largest = math.factorial(170)
 ###################### BASIC OPERATORS #################################
 def modulus(a,b):
     """ if b != 0 return absolute value of (a) % b
@@ -31,7 +31,11 @@ def modulus(a,b):
     if(b == 0):
         return 1
     else:
-        return abs(a) % b
+        try:
+            c = abs(a) % b
+        except:
+            c = 1
+        return c
 #----------------------------------#
 def safediv(a,b):
     """ a divided by b if b != 0 else
@@ -42,16 +46,29 @@ def safediv(a,b):
         c = a / b
     except:
         c = 1
+
+    if c > Largest:
+        return Largest
+
     return c
 #----------------------------------#
 def plus_mod_two(a,b):
     """ take absolute value of a + b
         and mod result with 2 """
-    return abs(a + b) % 2
+    try:
+        c = abs(a + b) % 2
+    except:
+        c = 1
+    return c
 #----------------------------------#
 def addition(a,b):
     """ return sum of a and b """
-    return a + b
+    c = a + b
+
+    if c > Largest:
+        return Largest
+
+    return c
 #----------------------------------#
 def subtract(a,b):
     """ returns the difference between
@@ -60,7 +77,12 @@ def subtract(a,b):
 #----------------------------------#
 def multiply(a,b):
     """ returns the multiple of a and b """
-    return a * b
+    c = a * b
+
+    if c > Largest:
+        return Largest
+
+    return c
 ###################### LOGIC OPERATORS #################################
 def lt(a,b):
     """ return 1 if True, else 0 """
@@ -147,6 +169,9 @@ def power(a,b):
         z = a ** b
     except:
         z = 1
+    if z > Largest:
+        return Largest
+
     return z
 #----------------------------------#
 def logAofB(a,b):
@@ -175,7 +200,7 @@ def choose(a,b):
 #----------------------------------#
 def constrainForLog(value):
     """ used by log methods """
-    if(float(value) < 0):
+    if(value < 0):
         return abs(value)
     elif(value == 0):
         return 1

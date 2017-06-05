@@ -15,11 +15,13 @@
 #                 170302: added plot_hist() to plot std
 #                 170313: added get_arguments()
 #                 170319: added addone()
+#                 170329: added np.random.shuffle() to read_file_np() 
+#                 170410: added option for case percentage
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.1
+#       VERSION:  0.1.10
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Mar 20 09:57:07 EDT 2017
+#      REVISION:  Mon Apr 10 16:16:10 CDT 2017
 #==============================================================================
 import pandas as pd
 import csv
@@ -60,7 +62,8 @@ def get_arguments():
             help="plot best individual trees",action='store_true')
     parser.add_argument("-F", "--fitness", 
             help="plot fitness results",action='store_true')
-
+    parser.add_argument("-P", "--percent", type=int,
+            help="percentage of case for case/control (default=25)")
 
     args = parser.parse_args()
 
@@ -77,6 +80,11 @@ def get_arguments():
     else:
         options['seed'] = args.seed
 
+    if(args.percent == None):
+        options['percent'] = 25
+    else:
+        options['percent'] = args.percent
+        
     if(args.population == None):
         options['population'] = 100
     else:
@@ -129,62 +137,26 @@ def get_arguments():
 
     return options
 ###############################################################################
-def get_random_data(rows, cols):
+def get_random_data(rows, cols, seed=None):
+    """ return randomly generated data is shape passed in """
+    if seed != None: np.random.seed(seed)
     data = np.random.randint(0,3,size=(rows,cols))
     x = data.transpose()
     return data.tolist(), x.tolist()
 ###############################################################################
-def create_file(data,label,outfile):
-    """ append label as column to data then write out file with header """
-    for i in range(len(data)):
-        data[i].append(label[i])
-        
-    # create header
-    header = []
-    for i in range(len(data[0])-1):
-        header.append('X' + str(i))
-    header.append('Class')
-        
-    # print data to results.tsv
-    datadf = pd.DataFrame(data,columns=header) # convert to DF
-    datadf.to_csv(outfile, sep='\t', index=False)
+def create_file(x,result,outfile):
+    df = pd.DataFrame(np.array(x).transpose(), columns=['X0','X1','X2'])
+    df['Class'] = result
+    df.to_csv(outfile, sep='\t', index=False)
 ###############################################################################
 def read_file(fname):
-    """ UNUSED: return both data and x
-        data = rows of instances
-        x is data transposed to rows of features """
-    with open(fname) as data:
-        dataReader = csv.reader(data, delimiter='\t')
-        data = list(list(int(elem) for elem in row) for row in dataReader)
-    #transpose into x
-    inst_length = len(data[0])
-    x = []
-    for i in range(inst_length):
-        y = [col[i] for col in data]
-        x.append(y)
-    del y
-    return data, x
-###############################################################################
-def read_file_np(fname):
     """ return both data and x
         data = rows of instances
         x is data transposed to rows of features """
     data = np.genfromtxt(fname, dtype=np.int, delimiter='\t') 
+    np.random.shuffle(data) # give the data a good row shuffle
     x = data.transpose()
     return data.tolist(), x.tolist()
-###############################################################################
-def addone(d):
-    a = np.array(d)
-    a += 1
-    return a.tolist()
-###############################################################################
-def xpose(d):
-    """ transpose list of lists """
-    x = []
-    for i in range(len(d[0])):
-        y = [col[i] for col in d]
-        x.append(y)
-    return x
 ###############################################################################
 def printf(format, *args):
     """ works just like the C/C++ printf function """

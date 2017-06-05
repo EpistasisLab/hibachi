@@ -16,15 +16,11 @@
 #                 170319: modified to use evals for evaluations
 #                 170320: modified to add 1 to data elements before processing
 #                 170323: added options for plotting
-#                 170410: added call to evals.reclass_result() in evalData()
-#                 170417: reworked post processing of new random data tests
-#                 170422: added ability for output directory selection
-#                         directory is created if it doesn't exist
-#        AUTHOR:  Pete Schmitt (discovery), pschmitt@upenn.edu
+#        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.9
+#       VERSION:  0.1.7
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Sat Apr 22 13:51:43 EDT 2017
+#      REVISION:  Thu Mar 23 13:05:37 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from mdr.utils import three_way_information_gain as three_way_ig
@@ -49,7 +45,7 @@ if (sys.version_info[0] < 3):
 
 labels = []
 all_igsums = []
-#results = []
+result = []
 start = time.time()
 
 options = IO.get_arguments()
@@ -64,8 +60,6 @@ cols = options['columns']
 Stats = options['statistics']
 Trees = options['trees']
 Fitness = options['fitness']
-prcnt = options['percent']
-outdir = options['outdir']
 #
 # set up random seed
 #
@@ -77,52 +71,65 @@ random.seed(rseed)
 np.random.seed(rseed)
 #
 # Read/create the data and put it in a list of lists.
-# data is normal view of columns as features
 # x is transposed view of data
 #
 if infile == 'random':
-    data, x = IO.get_random_data(rows,cols,rseed)
+    data, x = IO.get_random_data(rows,cols)
 else:
-    data, x = IO.read_file(infile)
+    data, x = IO.read_file_np(infile)
     rows = len(data)
     cols = len(x)
 
 inst_length = len(x)
+keepX = np.array(x).tolist()
+keepData = np.array(data).tolist()
 ###############################################################################
 # defined a new primitive set for strongly typed GP
 pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length), 
                             float, "X")
 # basic operators 
-pset.addPrimitive(op.add, [float,float], float)
-pset.addPrimitive(op.sub, [float,float], float)
-pset.addPrimitive(ops.multiply, [float,float], float)
-pset.addPrimitive(ops.safediv, [float,float], float)
-pset.addPrimitive(ops.modulus, [float,float], float)
-pset.addPrimitive(ops.plus_mod_two, [float,float], float)
+###pset.addPrimitive(op.add, [float,float], float)
+###pset.addPrimitive(op.sub, [float,float], float)
+###pset.addPrimitive(op.mul, [float,float], float)
+###pset.addPrimitive(ops.safediv, [float,float], float)
+###pset.addPrimitive(ops.modulus, [float,float], float)
+###pset.addPrimitive(ops.plus_mod_two, [float,float], float)
 # logic operators 
-pset.addPrimitive(ops.gt, [float, float], float)
-pset.addPrimitive(ops.lt, [float, float], float)
-pset.addPrimitive(ops.AND, [float, float], float)
-pset.addPrimitive(ops.OR, [float, float], float)
+###pset.addPrimitive(op.gt, [float, float], float)
+###pset.addPrimitive(op.lt, [float, float], float)
+###pset.addPrimitive(op.and_, [float, float], float)
+###pset.addPrimitive(op.or_, [float, float], float)
 pset.addPrimitive(ops.xor, [float,float], float)
+#pset.addPrimitive(op.eq, [float, float], bool)
+#pset.addPrimitive(op.le, [float, float], bool)
+#pset.addPrimitive(op.ne, [float, float], bool)
+#pset.addPrimitive(op.ge, [float, float], bool)
+# Define a new if-then-else function
+#def if_then_else(input, output1, output2):
+#    if input: return output1
+#    else: return output2
+#pset.addPrimitive(if_then_else, [bool, float, float], float)
 # bitwise operators 
-pset.addPrimitive(ops.bitand, [float,float], float)
-pset.addPrimitive(ops.bitor, [float,float], float)
-pset.addPrimitive(ops.bitxor, [float,float], float)
+###pset.addPrimitive(ops.bitand, [float,float], float)
+###pset.addPrimitive(ops.bitor, [float,float], float)
+###pset.addPrimitive(ops.bitxor, [float,float], float)
 # unary operators 
-pset.addPrimitive(op.abs, [float], float)
-pset.addPrimitive(ops.NOT, [float], float)
-pset.addPrimitive(ops.factorial, [float], float)
-pset.addPrimitive(ops.left, [float,float], float)
-pset.addPrimitive(ops.right, [float,float], float)
+###pset.addPrimitive(op.abs, [float], float)
+###pset.addPrimitive(op.not_, [float], float)
+###pset.addPrimitive(ops.factorial, [float], float)
+###pset.addPrimitive(ops.left, [float,float], float)
+###pset.addPrimitive(ops.right, [float,float], float)
+#pset.addPrimitive(ops.log10ofA, [float], float)
+#pset.addPrimitive(ops.log2ofA, [float], float)
+#pset.addPrimitive(ops.logEofA, [float], float)
 # large operators 
-pset.addPrimitive(ops.power, [float,float], float)
-pset.addPrimitive(ops.logAofB, [float,float], float)
-pset.addPrimitive(ops.permute, [float,float], float)
-pset.addPrimitive(ops.choose, [float,float], float)
+###pset.addPrimitive(ops.power, [float,float], float)
+###pset.addPrimitive(ops.logAofB, [float,float], float)
+###pset.addPrimitive(ops.permute, [float,float], float)
+###pset.addPrimitive(ops.choose, [float,float], float)
 # misc operators 
-pset.addPrimitive(min, [float,float], float)
-pset.addPrimitive(max, [float,float], float)
+###pset.addPrimitive(min, [float,float], float)
+###pset.addPrimitive(max, [float,float], float)
 # terminals 
 randval = "rand" + str(random.random())[2:]  # so it can rerun from ipython
 pset.addEphemeralConstant(randval, lambda: random.random() * 100, float)
@@ -139,12 +146,13 @@ toolbox.register("individual",
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 toolbox.register("compile", gp.compile, pset=pset)
 ##############################################################################
-def evalData(individual, xdata, xtranspose):
+def evalData(individual, training_data):
     """ evaluate the individual """
     result = []
     igsums = np.array([])
-    x = xdata
-    data = xtranspose
+    x = training_data
+    # add 1 to data
+#   x1 = IO.addone(x)
 
     # Transform the tree expression in a callable function
     func = toolbox.compile(expr=individual)
@@ -160,10 +168,7 @@ def evalData(individual, xdata, xtranspose):
         return -sys.maxsize, sys.maxsize
     
      
-    if evaluate == 'normal':
-        rangeval = 1
-
-    elif evaluate == 'folds':
+    if evaluate == 'folds':
         rangeval = numfolds = 10  # must be equal
         folds = evals.getfolds(x, numfolds)
 
@@ -175,8 +180,10 @@ def evalData(individual, xdata, xtranspose):
         rangeval = 10
         percent = 10
 
-    result = evals.reclass_result(x, result, prcnt)
-#   results.append(result)
+    else:  # normal 
+        rangeval = 1
+    
+#x1, result = evals.reclass(x, result)
 
     for m in range(rangeval):
         igsum = 0 
@@ -188,6 +195,7 @@ def evalData(individual, xdata, xtranspose):
 
         elif evaluate == 'noise': 
             xsub = evals.addnoise(x,percent)
+#           xsub = evals.addnoise1(x1,percent) # +1 version
 
         else:  # normal
             xsub = x
@@ -219,7 +227,7 @@ def evalData(individual, xdata, xtranspose):
             return igsum_avg, len(individual)
 
 ##############################################################################
-toolbox.register("evaluate", evalData, xdata = x, xtranspose=data)
+toolbox.register("evaluate", evalData, training_data=x)
 toolbox.register("select", tools.selNSGA2)
 toolbox.register("mate", gp.cxOnePoint)
 toolbox.register("expr_mut", gp.genFull, min_=0, max_=2)
@@ -270,10 +278,7 @@ print('generations: ' + str(generations))
 print('evaluation:  ' + str(evaluate))
 print('ign 2/3way:  ' + str(ig))
 print('random seed: ' + str(rseed))
-print('prcnt cases: ' + str(prcnt) + '%')
-print('output dir:  ' + outdir)
-print()
-# Here we go...
+
 pop, stats, hof, logbook = hibachi(population,generations,rseed)
 best = []
 fitness = []
@@ -306,77 +311,87 @@ if(infile == 'random'):
     file1 = 'random0'
 else:
     file1 = os.path.splitext(os.path.basename(infile))[0]
-#
-# make output directory if it doesn't exist
-#
-if not os.path.exists(outdir):
-    os.makedirs(outdir)
-
-outfile = outdir + "results-" + file1 + "-" + str(rseed) + '-' 
-outfile += evaluate + "-" + str(ig) + "way.txt" 
+outfile = "results-" + file1 + "-" + evaluate + "-" + str(rseed) 
+outfile = outfile + "-ig" + str(ig) + "way.txt" 
 print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
-IO.create_file(x,labels[0][1],outfile)       # use first individual
+IO.create_file(data,labels[0][1],outfile)       # use first individual
+
+file = os.path.splitext(os.path.basename(infile))[0]
+if Stats == True:
+    statfile = "stats-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    print('saving stats to', statfile)
+    plots.plot_stats(df,statfile)
+
+if Trees == True:
+    print('saving tree plots to tree_##.pdf')
+    plots.plot_trees(best)
+
+if Fitness == True:
+    outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    print('saving fitness plot to', outfile)
+    plots.plot_fitness(fitness,outfile)
 #
 # test results against other data
 #
 if rdf_count == 0:
     files = glob.glob('data/in*')
     files.sort()
+    D = [0] * len(files)
+    X = [0] * len(files)
+else:
+    D = [0] * rdf_count
+    X = [0] * rdf_count
 #
-#  Test remaining data files with best individual
+#  Test remaining data files with top 2 best individuals
 #
-save_seed = rseed
 if(infile == 'random' or rdf_count > 0):
     print('number of random data to generate:',rdf_count)
     for i in range(rdf_count):
-        rseed += 1
-        D, X = IO.get_random_data(rows,cols,rseed)
+        D[i],X[i] = IO.get_random_data(rows,cols)
         nfile = 'random' + str(i+1)
         print(nfile)
-        individual = best[0]
-        func = toolbox.compile(expr=individual)
-        result = [(func(*inst[:inst_length])) for inst in D]
-        nresult = evals.reclass_result(X, result, prcnt)
-        outfile = outdir + 'model_from-' + file1 
-        outfile += '-using-' + nfile + '-' + str(rseed) + '-' 
-        outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
+        outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
+        print('best[0]', evalData(best[0],X[i]))
         print(outfile)
-        IO.create_file(X,nresult,outfile)
+        IO.create_file(D[i],labels[-1][1],outfile)
 else:
     print('number of files:',len(files))
     for i in range(len(files)):
-        rseed += 1
         if files[i] == infile: continue
         nfile = os.path.splitext(os.path.basename(files[i]))[0]
         print(infile)
         print()
-        D, X = IO.read_file(files[i]) #  new data file
+        D[i],X[i] = IO.read_file(files[i]) #  new data file
         print('input file:', files[i])
-        individual = best[0]
-        func = toolbox.compile(expr=individual)
-        result = [(func(*inst[:inst_length])) for inst in D]
-        nresult = evals.reclass_result(X, result, prcnt)
-        outfile = outdir + 'model_from-' + file1 + '-using-' + nfile + '-'
-        outfile += str(rseed) + '-' + nfile + '-'
-        outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
+        print('best[0]', evalData(best[0],X[i]))
+        outfile = 'model_from-' + file1 + '-using-' + nfile + '.txt'
         print(outfile)
-        IO.create_file(X,nresult,outfile)
-#
-# plot data if selected
-#
-file = os.path.splitext(os.path.basename(infile))[0]
-if Stats == True:
-    statfile = outdir + "stats-" + file + "-" + evaluate 
-    statfile += "-" + str(rseed) + ".pdf"
-    print('saving stats to', statfile)
-    plots.plot_stats(df,statfile)
+        IO.create_file(D[i],labels[-1][1],outfile)
 
-if Trees == True:
-    print('saving tree plot to ' + outdir + 'tree_' + str(save_seed) + '.pdf')
-    plots.plot_tree(best[0],save_seed,outdir)
+print()
+print('NORMAL evaluation (original input file):')
+#print('FOLDS re-evaluation (original input file):')
+print()
+evaluate = 'normal'
+print('input file:', infile)
+print('best[0]', evalData(best[0],x))
+#print('best[1]', evalData(best[1],x))
+#print()
 
-if Fitness == True:
-    outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
-    print('saving fitness plot to', outfile)
-    plots.plot_fitness(fitness,outfile)
+#print('tree-0', best[0])
+#print('tree-1', best[1])
+#
+# save for manual processing
+#
+#ind_str = 'some individual string'
+#individual = creator.Individual.from_string(ind_str, pset)
+#func = toolbox.compile(expr=individual)
+#
+#  Plot standard deviations
+#
+#std_igsums = np.array([])
+#for i in range(len(all_igsums)):
+#    std_igsums = np.append(std_igsums, np.std(all_igsums[i]))
+#infile = os.path.splitext(os.path.basename(infile))[0]
+#plots.plot_hist(std_igsums,evaluate,infile,rseed)
