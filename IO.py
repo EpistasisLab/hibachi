@@ -155,11 +155,13 @@ def get_random_data(rows, cols, seed=None):
 ###############################################################################
 def create_file(x,result,outfile):
     d = np.array(x).transpose()    
-    columns = [0]*np.shape(d)[0] 
-    for i in range(0,np.shape(d)[0]): # create columns names for variable number of columns.
+    columns = [0]*len(x)
+    # create columns names for variable number of columns.
+    for i in range(len(x)):
         columns[i] = 'X' + str(i)
-#    df = pd.DataFrame(np.array(x).transpose(), columns=['X0','X1','X2'])
-    df = pd.DataFrame(np.array(x).transpose(), columns)
+    
+    df = pd.DataFrame(d, columns=columns)
+    
     df['Class'] = result
     df.to_csv(outfile, sep='\t', index=False)
 ###############################################################################
