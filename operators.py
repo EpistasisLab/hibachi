@@ -13,17 +13,18 @@
 #        UPDATE:  Floats are dealt with as necessary for functions
 #                 that require ints
 #                 170216: added try/except to safediv()
+#                 170626: added equal and not_equal operators
 #        AUTHOR:  Peter R. Schmitt (@HOME), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.1
+#       VERSION:  0.1.3
 #       CREATED:  09/29/2016 10:39:21 EDT
-#      REVISION:  Tue Feb 14 13:09:23 EST 2017
+#      REVISION:  Mon Jun 26 15:07:31 EDT 2017
 #===========================================================================
-
 import numpy as np
 import math
 import operator as op
-Largest = math.factorial(170)
+FACTMAX=170
+Largest = math.factorial(FACTMAX)
 ###################### BASIC OPERATORS #################################
 def modulus(a,b):
     """ if b != 0 return absolute value of (a) % b
@@ -47,7 +48,9 @@ def safediv(a,b):
     except:
         c = 1
 
-    if c > Largest:
+    if abs(c) > Largest:
+        if c < 0:
+            return -(Largest)
         return Largest
 
     return c
@@ -65,25 +68,50 @@ def addition(a,b):
     """ return sum of a and b """
     c = a + b
 
-    if c > Largest:
+    if abs(c) > Largest:
+        if c < 0:
+            return -(Largest)
         return Largest
 
     return c
 #----------------------------------#
 def subtract(a,b):
     """ returns the difference between
-        a and b """
-    return a - b
+        a and b """ 
+    c = a - b
+
+    if abs(c) > Largest:
+        if c < 0:
+            return -(Largest)
+        return Largest
+
+    return c
 #----------------------------------#
 def multiply(a,b):
     """ returns the multiple of a and b """
     c = a * b
 
-    if c > Largest:
+    if abs(c) > Largest:
+        if c < 0:
+            return -(Largest)
         return Largest
 
     return c
 ###################### LOGIC OPERATORS #################################
+def not_equal(a,b):
+    """ return 1 if True, else 0 """
+    if(a != b):
+        return 1
+    else:
+        return 0
+#----------------------------------#
+def equal(a,b):
+    """ return 1 if True, else 0 """
+    if(a == b):
+        return 1
+    else:
+        return 0
+#----------------------------------#
 def lt(a,b):
     """ return 1 if True, else 0 """
     if(a < b):
@@ -138,7 +166,7 @@ def ABS(a):
 def factorial(a):
     """ returns 0 if a >= 100 """
     a = abs(round(a))
-    a = min(a, 100)
+    a = min(a, FACTMAX)
     return math.factorial(a)
 #----------------------------------#
 def NOT(a):

@@ -18,11 +18,12 @@
 #                 170329: added np.random.shuffle() to read_file_np() 
 #                 170410: added option for case percentage
 #                 170420: added option for output directory
+#                 170706: added option for showing all fitnesses
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.10
+#       VERSION:  0.1.11
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Thu Apr 20 09:29:11 EDT 2017
+#      REVISION:  Thu Jul  6 15:34:41 EDT 2017
 #==============================================================================
 import pandas as pd
 import csv
@@ -56,6 +57,9 @@ def get_arguments():
             help="number of random data to use instead of files (default=0)")
     parser.add_argument("-s", "--seed", type=int, 
             help="random seed to use (default=random value 1-1000)")
+    parser.add_argument("-A", "--showallfitnesses", 
+            help="show all fitnesses in a multi objective optimization",
+            action='store_true')
     parser.add_argument("-R", "--rows", type=int, 
             help="random data rows (default=1000)")
     parser.add_argument("-C", "--columns", type=int, 
@@ -128,6 +132,11 @@ def get_arguments():
         options['columns'] = 3
     else:
         options['columns'] = args.columns
+
+    if(args.showallfitnesses):
+        options['showallfitnesses'] = True
+    else:
+        options['showallfitnesses'] = False
 
     if(args.statistics):
         options['statistics'] = True

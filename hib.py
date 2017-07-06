@@ -1,13 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #===============================================================================
 #
 #          FILE:  hib.py
 # 
-#         USAGE:  ./hib.py <file.tsv> evaluate population generations
+#         USAGE:  ./hib.py [options]
 # 
 #   DESCRIPTION:  Data simulation software that creates data sets with 
 #                 particular characteristics
-#       OPTIONS:  input_file [folds|subsets|noise]
+#
+#       OPTIONS:  ./hib.py -h for all options
+#
 #  REQUIREMENTS:  python >= 3.5, deap, scikit-mdr, pygraphviz
 #          BUGS:  Damn ticks!!
 #       UPDATES:  170224: try/except in evalData()
@@ -20,18 +22,23 @@
 #                 170417: reworked post processing of new random data tests
 #                 170422: added ability for output directory selection
 #                         directory is created if it doesn't exist
-#        AUTHOR:  Pete Schmitt (discovery), pschmitt@upenn.edu
+#                 170510: using more protected operators from operators.py
+#                 170621: import information gains from local util.py to
+#                         avoid unnecessary matplotlib import
+#                 170626: added equal and not_equal operators
+#                 170706: added option to show all fitnesses
+#       AUTHORS:  Pete Schmitt (discovery), pschmitt@upenn.edu
+#                 Randy Olson, olsonran@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.9
+#       VERSION:  0.1.10
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Sat Apr 22 13:51:43 EDT 2017
+#      REVISION:  Thu Jul  6 15:35:50 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
-from mdr.utils import three_way_information_gain as three_way_ig
-from mdr.utils import two_way_information_gain as two_way_ig
+from utils import three_way_information_gain as three_way_ig
+from utils import two_way_information_gain as two_way_ig
 import IO
 import evals
-import plots
 import itertools
 import glob
 import numpy as np
@@ -66,6 +73,9 @@ Trees = options['trees']
 Fitness = options['fitness']
 prcnt = options['percent']
 outdir = options['outdir']
+showall = options['showallfitnesses']
+if Fitness or Trees or Stats:
+    import plots
 #
 # set up random seed
 #
@@ -93,13 +103,15 @@ inst_length = len(x)
 pset = gp.PrimitiveSetTyped("MAIN", itertools.repeat(float, inst_length), 
                             float, "X")
 # basic operators 
-pset.addPrimitive(op.add, [float,float], float)
-pset.addPrimitive(op.sub, [float,float], float)
+pset.addPrimitive(ops.addition, [float,float], float)
+pset.addPrimitive(ops.subtract, [float,float], float)
 pset.addPrimitive(ops.multiply, [float,float], float)
 pset.addPrimitive(ops.safediv, [float,float], float)
 pset.addPrimitive(ops.modulus, [float,float], float)
 pset.addPrimitive(ops.plus_mod_two, [float,float], float)
 # logic operators 
+pset.addPrimitive(ops.equal, [float, float], float)
+pset.addPrimitive(ops.not_equal, [float, float], float)
 pset.addPrimitive(ops.gt, [float, float], float)
 pset.addPrimitive(ops.lt, [float, float], float)
 pset.addPrimitive(ops.AND, [float, float], float)
@@ -241,7 +253,7 @@ def pareto_eq(ind1, ind2):
     """
     return np.all(ind1.fitness.values == ind2.fitness.values)
 ##############################################################################
-def hibachi(pop,gen,rseed):
+def hibachi(pop,gen,rseed,showall):
     """ set up stats and population size,
         then start the process """
     MU, LAMBDA = pop, pop
@@ -250,11 +262,18 @@ def hibachi(pop,gen,rseed):
     random.seed(rseed)
     pop = toolbox.population(n=MU)
     hof = tools.ParetoFront(similar=pareto_eq)
-    stats = tools.Statistics(lambda ind: max(ind.fitness.values[0],0))
-    stats.register("avg", np.mean)
-    stats.register("std", np.std)
-    stats.register("min", np.min)
-    stats.register("max", np.max)
+    if showall:
+        stats = tools.Statistics(lambda ind: ind.fitness.values)
+        stats.register("avg", np.mean, axis=0)
+        stats.register("std", np.std, axis=0)
+        stats.register("min", np.min, axis=0)
+        stats.register("max", np.max, axis=0)
+    else:
+        stats = tools.Statistics(lambda ind: max(ind.fitness.values[0],0))
+        stats.register("avg", np.mean)
+        stats.register("std", np.std)
+        stats.register("min", np.min)
+        stats.register("max", np.max)
     
     pop, log = algorithms.eaMuPlusLambda(pop,toolbox,mu=MU,lambda_=LAMBDA, 
                           cxpb=0.7, mutpb=0.3, ngen=NGEN, stats=stats, 
@@ -265,6 +284,7 @@ def hibachi(pop,gen,rseed):
 # run the program
 ##############################################################################
 print('input data:  ' + infile)
+print('data shape:  ' + str(rows) + ' X ' + str(cols))
 print('population:  ' + str(population))
 print('generations: ' + str(generations))
 print('evaluation:  ' + str(evaluate))
@@ -274,7 +294,7 @@ print('prcnt cases: ' + str(prcnt) + '%')
 print('output dir:  ' + outdir)
 print()
 # Here we go...
-pop, stats, hof, logbook = hibachi(population,generations,rseed)
+pop, stats, hof, logbook = hibachi(population,generations,rseed,showall)
 best = []
 fitness = []
 for ind in hof:
@@ -377,6 +397,7 @@ if Trees == True:
     plots.plot_tree(best[0],save_seed,outdir)
 
 if Fitness == True:
-    outfile = "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
+    outfile = outdir
+    outfile += "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
     print('saving fitness plot to', outfile)
     plots.plot_fitness(fitness,outfile)
