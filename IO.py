@@ -19,11 +19,13 @@
 #                 170410: added option for case percentage
 #                 170420: added option for output directory
 #                 170706: added option for showing all fitnesses
+#                 170710: added option to process given model
+#                         added read_model and write_model
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.11
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Thu Jul  6 15:34:41 EDT 2017
+#      REVISION:  Mon Jul 10 15:08:40 EDT 2017
 #==============================================================================
 import pandas as pd
 import csv
@@ -48,9 +50,13 @@ def get_arguments():
             help="number of generations (default=40)")
     parser.add_argument("-i", "--information_gain", type=int, 
             help="information gain 2 way or 3 way (default=2)")
+    parser.add_argument("-m", "--model_file", type=str, 
+            help="model file to use to create Class from; otherwise \
+                  analyze data for new model.  Other options available \
+                  when using -m: [f,o,s,P]")
     parser.add_argument('-o', '--outdir', type=str,
             help='name of output directory (default = .)' +
-            ' Note: the directory must exist')
+            ' Note: the directory will be created if it does not exist')
     parser.add_argument("-p", "--population", type=int, 
             help="size of population (default=100)")
     parser.add_argument("-r", "--random_data_files", type=int, 
@@ -60,18 +66,18 @@ def get_arguments():
     parser.add_argument("-A", "--showallfitnesses", 
             help="show all fitnesses in a multi objective optimization",
             action='store_true')
-    parser.add_argument("-R", "--rows", type=int, 
-            help="random data rows (default=1000)")
     parser.add_argument("-C", "--columns", type=int, 
             help="random data columns (default=3)")
-    parser.add_argument("-S", "--statistics", 
-            help="plot statistics",action='store_true')
-    parser.add_argument("-T", "--trees", 
-            help="plot best individual trees",action='store_true')
     parser.add_argument("-F", "--fitness", 
             help="plot fitness results",action='store_true')
     parser.add_argument("-P", "--percent", type=int,
             help="percentage of case for case/control (default=25)")
+    parser.add_argument("-R", "--rows", type=int, 
+            help="random data rows (default=1000)")
+    parser.add_argument("-S", "--statistics", 
+            help="plot statistics",action='store_true')
+    parser.add_argument("-T", "--trees", 
+            help="plot best individual trees",action='store_true')
 
     args = parser.parse_args()
 
@@ -82,6 +88,11 @@ def get_arguments():
         options['file'] = args.file
         options['basename'] = os.path.basename(args.file)
         options['dir_path'] = os.path.dirname(args.file)
+
+    if(args.model_file != None):
+        options['model_file'] = args.model_file
+    else:
+        options['model_file'] = ""
 
     if(args.outdir == None):
         options['outdir'] = "./"
@@ -182,6 +193,19 @@ def read_file(fname):
     np.random.shuffle(data) # give the data a good row shuffle
     x = data.transpose()
     return data.tolist(), x.tolist()
+###############################################################################
+def write_model(outfile, best):
+    f = open(outfile, 'w')
+    f.write(str(best[0]))
+    f.write('\n')
+    f.close()
+###############################################################################
+def read_model(infile):
+    f = open(infile, 'r')
+    m = f.read()
+    m = m.rstrip()
+    f.close()
+    return m
 ###############################################################################
 def printf(format, *args):
     """ works just like the C/C++ printf function """

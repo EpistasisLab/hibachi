@@ -27,12 +27,14 @@
 #                         avoid unnecessary matplotlib import
 #                 170626: added equal and not_equal operators
 #                 170706: added option to show all fitnesses
+#                 170710: added option to process given model
+#                         writes out best model to model file
 #       AUTHORS:  Pete Schmitt (discovery), pschmitt@upenn.edu
 #                 Randy Olson, olsonran@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.10
+#       VERSION:  0.2.0
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Thu Jul  6 15:35:50 EDT 2017
+#      REVISION:  Mon Jul 10 15:07:09 EDT 2017
 #===============================================================================
 from deap import algorithms, base, creator, tools, gp
 from utils import three_way_information_gain as three_way_ig
@@ -51,8 +53,9 @@ import sys
 import time
 ###############################################################################
 if (sys.version_info[0] < 3):
-    print("hibachi requires Python version 3.5 or later")
-    sys.exit(1)
+    print("Python version 3.5 or later is HIGHLY recommended")
+    print("speed, accuracy and reproducibility.")
+
 
 labels = []
 all_igsums = []
@@ -74,6 +77,7 @@ Fitness = options['fitness']
 prcnt = options['percent']
 outdir = options['outdir']
 showall = options['showallfitnesses']
+model_file = options['model_file']
 if Fitness or Trees or Stats:
     import plots
 #
@@ -285,15 +289,30 @@ def hibachi(pop,gen,rseed,showall):
 ##############################################################################
 print('input data:  ' + infile)
 print('data shape:  ' + str(rows) + ' X ' + str(cols))
-print('population:  ' + str(population))
-print('generations: ' + str(generations))
-print('evaluation:  ' + str(evaluate))
-print('ign 2/3way:  ' + str(ig))
 print('random seed: ' + str(rseed))
 print('prcnt cases: ' + str(prcnt) + '%')
 print('output dir:  ' + outdir)
-print()
-# Here we go...
+if(model_file == ""):
+    print('population:  ' + str(population))
+    print('generations: ' + str(generations))
+    print('evaluation:  ' + str(evaluate))
+    print('ign 2/3way:  ' + str(ig))
+print("")
+# 
+# If model file, ONLY process the model
+#
+if(model_file != ""):
+    individual = IO.read_model(model_file)
+    func = toolbox.compile(expr=individual)
+    result = [(func(*inst[:inst_length])) for inst in data]
+    nresult = evals.reclass_result(x, result, prcnt)
+    outfile = outdir + 'results_using_model_from-' + os.path.basename(model_file) 
+    print('Write result to',outfile)
+    IO.create_file(x,nresult,outfile)
+    sys.exit(0)
+#
+# Start evaluation here
+#
 pop, stats, hof, logbook = hibachi(population,generations,rseed,showall)
 best = []
 fitness = []
@@ -338,11 +357,18 @@ print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(x,labels[0][1],outfile)       # use first individual
 #
+# write top model out to file
+#
+moutfile = outdir + "model-" + file1 + "-" + str(rseed) + '-' 
+moutfile += evaluate + "-" + str(ig) + "way.txt" 
+print("writing model to", moutfile)
+IO.write_model(moutfile, best)
+#
 # test results against other data
 #
-if rdf_count == 0:
-    files = glob.glob('data/in*')
-    files.sort()
+#if rdf_count == 0:
+#    files = glob.glob('data/in*')
+#    files.sort()
 #
 #  Test remaining data files with best individual
 #
@@ -363,25 +389,25 @@ if(infile == 'random' or rdf_count > 0):
         outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
         print(outfile)
         IO.create_file(X,nresult,outfile)
-else:
-    print('number of files:',len(files))
-    for i in range(len(files)):
-        rseed += 1
-        if files[i] == infile: continue
-        nfile = os.path.splitext(os.path.basename(files[i]))[0]
-        print(infile)
-        print()
-        D, X = IO.read_file(files[i]) #  new data file
-        print('input file:', files[i])
-        individual = best[0]
-        func = toolbox.compile(expr=individual)
-        result = [(func(*inst[:inst_length])) for inst in D]
-        nresult = evals.reclass_result(X, result, prcnt)
-        outfile = outdir + 'model_from-' + file1 + '-using-' + nfile + '-'
-        outfile += str(rseed) + '-' + nfile + '-'
-        outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
-        print(outfile)
-        IO.create_file(X,nresult,outfile)
+#else:
+#    print('number of files:',len(files))
+#    for i in range(len(files)):
+#        rseed += 1
+#        if files[i] == infile: continue
+#        nfile = os.path.splitext(os.path.basename(files[i]))[0]
+#        print(infile)
+#        print()
+#        D, X = IO.read_file(files[i]) #  new data file
+#        print('input file:', files[i])
+#        individual = best[0]
+#        func = toolbox.compile(expr=individual)
+#        result = [(func(*inst[:inst_length])) for inst in D]
+#        nresult = evals.reclass_result(X, result, prcnt)
+#        outfile = outdir + 'model_from-' + file1 + '-using-' + nfile + '-'
+#        outfile += str(rseed) + '-' + nfile + '-'
+#        outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
+#        print(outfile)
+#        IO.create_file(X,nresult,outfile)
 #
 # plot data if selected
 #
