@@ -44,9 +44,9 @@ optional arguments:
   -R ROWS, --rows ROWS  random data rows (default=1000)
   -S, --statistics      plot statistics
   -T, --trees           plot best individual trees
-  ```
+```
   Prerequisites:
-  ```
+```
   graphviz libraries
   Python 3.4+ and packages
     argparse
@@ -68,4 +68,4 @@ optional arguments:
     sklearn
     sys
     time
-    ```
+```
