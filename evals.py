@@ -13,15 +13,17 @@
 #                         reworked reclass_result()
 #                 170510: reclass_result() convert result to numpy array before
 #                         attaching to pandas DataFrame
+#                 170801: added odds_ratio()
 #        AUTHOR:  Pete Schmitt (hershey), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
 #       VERSION:  0.1.3
 #       CREATED:  Sun Mar 19 11:34:09 EDT 2017
-#      REVISION:  Wed May 10 15:28:06 EDT 2017
+#      REVISION:  Wed Aug 16 13:55:04 EDT 2017
 #==============================================================================
 import numpy as np
 import pandas as pd
 import sys
+from sklearn.linear_model import LogisticRegression
 ###############################################################################
 def subsets(x,percent):
     """ take a subset of "percent" of x """
@@ -83,3 +85,22 @@ def reclass_result(x, result, pct):
     df.Class = c
     df.sort_index(inplace=True)  # put data back in index order
     return df['Class'].tolist()
+###############################################################################
+def oddsRatio(data, class_labels, dlen):
+    """ returns sums of difference between fixed and odd_ratio """
+#   fixed = np.array([4,2,1.5,1.4,1.3,1.2,1.18,1.16,1.14,1.12])
+    fixed = np.array([1.5, 1.3, 1.2, 1.15, 1.1, 1.09, 1.08, 1.07, 1.06, 1.05])
+    odds_ratio = []
+    
+    features = np.array(data)
+    class_labels = np.array(class_labels)
+
+    for feature_index in range(dlen):
+        clf = LogisticRegression()
+        x = features[feature_index].reshape(-1,1)
+        clf.fit(x, class_labels)
+        odds_ratio.append(np.exp(clf.coef_[0][0]))
+
+    odds_ratio = np.array(sorted(odds_ratio, reverse=True))
+    sum_of_diffs = np.sum(np.absolute(np.subtract(fixed, odds_ratio)))
+    return sum_of_diffs, odds_ratio

@@ -21,11 +21,12 @@
 #                 170706: added option for showing all fitnesses
 #                 170710: added option to process given model
 #                         added read_model and write_model
+#                 180307: added oddsratio to evaluate options
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.11
+#       VERSION:  0.1.13
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Jul 10 15:08:40 EDT 2017
+#      REVISION:  Wed Mar  7 10:50:27 EST 2018
 #==============================================================================
 import pandas as pd
 import csv
@@ -41,8 +42,8 @@ def get_arguments():
         "Run hibachi evaluations on your data")
 
     parser.add_argument('-e', '--evaluation', type=str,
-            help='name of evaluation [normal|folds|subsets|noise]' +
-                 ' (default=normal)')
+            help='name of evaluation [normal|folds|subsets|noise|oddsratio]' +
+                 ' (default=normal) note: oddsration sets columns == 10')
     parser.add_argument('-f', '--file', type=str,
             help='name of training data file (REQ)' +
                  ' filename of random will create all data')
@@ -67,7 +68,8 @@ def get_arguments():
             help="show all fitnesses in a multi objective optimization",
             action='store_true')
     parser.add_argument("-C", "--columns", type=int, 
-            help="random data columns (default=3)")
+            help="random data columns (default=3) note: " +
+                 "evaluation of oddsratio sets columns to 10")
     parser.add_argument("-F", "--fitness", 
             help="plot fitness results",action='store_true')
     parser.add_argument("-P", "--percent", type=int,
@@ -133,6 +135,8 @@ def get_arguments():
         options['evaluation'] = 'normal'
     else:
         options['evaluation'] = args.evaluation
+        if options['evaluation'] == 'oddsratio':
+            args.columns = 10
 
     if(args.rows == None):
         options['rows'] = 1000
@@ -195,6 +199,7 @@ def read_file(fname):
     return data.tolist(), x.tolist()
 ###############################################################################
 def write_model(outfile, best):
+    """ write top individual out to model file """
     f = open(outfile, 'w')
     f.write(str(best[0]))
     f.write('\n')
@@ -206,6 +211,32 @@ def read_model(infile):
     m = m.rstrip()
     f.close()
     return m
+###############################################################################
+def create_OR_table(best,fitness,seed,outdir,rowxcol,popstr,
+                    genstr,evaluate,ig):
+    """ write out odd_ratio and supporting data """
+    fname = outdir + "or_sod_igsum-" + rowxcol + '-' 
+    fname += 's' + str(seed).zfill(3) + '-'
+    fname += popstr + '-' 
+    fname += genstr + '-' 
+    fname += evaluate + '-ig' + str(ig) + 'way.txt'
+    f = open(fname, 'w')
+    f.write("Individual\tFitness\tSOD\tigsum\tOR_list\tModel\n")
+    for i in range(len(best)):
+        f.write(str(i))
+        f.write('\t')
+        f.write(str(fitness[i][0]))
+        f.write('\t')
+        f.write(str(best[i].SOD))
+        f.write('\t')
+        f.write(str(best[i].igsum))
+        f.write('\t')
+        f.write(str(best[i].OR.tolist()))
+        f.write('\t')
+        f.write(str(best[i]))
+        f.write('\n')
+
+    f.close()
 ###############################################################################
 def printf(format, *args):
     """ works just like the C/C++ printf function """

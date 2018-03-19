@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #===============================================================================
 #
 #          FILE:  hib.py
@@ -29,17 +29,21 @@
 #                 170706: added option to show all fitnesses
 #                 170710: added option to process given model
 #                         writes out best model to model file
+#                 180307: added oddsratio as an option to evaluate
+#                 180316: added tree plot (-T) to model file processing (-m)
 #       AUTHORS:  Pete Schmitt (discovery), pschmitt@upenn.edu
 #                 Randy Olson, olsonran@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.2.0
+#       VERSION:  0.3.1
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Mon Jul 10 15:07:09 EDT 2017
+#      REVISION:  Fri Mar 16 14:54:07 EDT 2018
 #===============================================================================
+import IO
+options = IO.get_arguments()
+from IO import printf
 from deap import algorithms, base, creator, tools, gp
 from utils import three_way_information_gain as three_way_ig
 from utils import two_way_information_gain as two_way_ig
-import IO
 import evals
 import itertools
 import glob
@@ -53,16 +57,14 @@ import sys
 import time
 ###############################################################################
 if (sys.version_info[0] < 3):
-    print("Python version 3.5 or later is HIGHLY recommended")
-    print("speed, accuracy and reproducibility.")
-
+    printf("Python version 3.5 or later is HIGHLY recommended")
+    printf("for speed, accuracy and reproducibility.")
 
 labels = []
 all_igsums = []
 #results = []
 start = time.time()
 
-options = IO.get_arguments()
 infile = options['file']
 evaluate = options['evaluation']
 population = options['population']
@@ -78,6 +80,13 @@ prcnt = options['percent']
 outdir = options['outdir']
 showall = options['showallfitnesses']
 model_file = options['model_file']
+#
+# define output variables
+#
+rowxcol = str(rows) + 'x' + str(cols)
+popstr = 'p' + str(population)
+genstr = 'g' + str(generations)
+#
 if Fitness or Trees or Stats:
     import plots
 #
@@ -145,7 +154,10 @@ pset.addEphemeralConstant(randval, lambda: random.random() * 100, float)
 pset.addTerminal(0.0, float)
 pset.addTerminal(1.0, float)
 # creator 
-creator.create("FitnessMulti", base.Fitness, weights=(1.0, -1.0))
+if evaluate == 'oddsratio':
+    creator.create("FitnessMulti", base.Fitness, weights=(1.0, -1.0, -1.0))
+else:
+    creator.create("FitnessMulti", base.Fitness, weights=(1.0, -1.0))
 creator.create("Individual", gp.PrimitiveTree, fitness=creator.FitnessMulti)
 # toolbox 
 toolbox = base.Toolbox()
@@ -176,7 +188,7 @@ def evalData(individual, xdata, xtranspose):
         return -sys.maxsize, sys.maxsize
     
      
-    if evaluate == 'normal':
+    if evaluate == 'normal' or evaluate == 'oddsratio':
         rangeval = 1
 
     elif evaluate == 'folds':
@@ -192,7 +204,6 @@ def evalData(individual, xdata, xtranspose):
         percent = 10
 
     result = evals.reclass_result(x, result, prcnt)
-#   results.append(result)
 
     for m in range(rangeval):
         igsum = 0 
@@ -210,17 +221,20 @@ def evalData(individual, xdata, xtranspose):
     
         # Calculate information gain between data columns and result
         # and return mean of these calculations
-        if(ig == 2):
-            for i in range(inst_length):
-                for j in range(i+1,inst_length):
-                    igsum += two_way_ig(xsub[i], xsub[j], result)
-        elif(ig == 3):
-            for i in range(inst_length):
-                for j in range(i+1,inst_length):
-                    for k in range(j+1,inst_length):
-                        igsum += three_way_ig(xsub[i], xsub[j], xsub[k], result)
-                    
+        if(ig == 2): 
+            for i,j in itertools.combinations(range(inst_length),2): 
+                igsum += two_way_ig(xsub[i], xsub[j], result)
+        elif(ig == 3): 
+            for i,j,k in itertools.combinations(range(inst_length),3): 
+                igsum += three_way_ig(xsub[i], xsub[j], xsub[k], result)
+
         igsums = np.append(igsums,igsum)
+        
+    if evaluate == 'oddsratio':
+        sum_of_diffs, OR = evals.oddsRatio(xsub, result, inst_length)
+        individual.OR = OR
+        individual.SOD = sum_of_diffs
+        individual.igsum = igsum
         
     igsum_avg = np.mean(igsums)
     labels.append((igsum_avg, result)) # save all results
@@ -229,7 +243,17 @@ def evalData(individual, xdata, xtranspose):
     if len(individual) <= 1:
         return -sys.maxsize, sys.maxsize
     else:
-        if evaluate == 'normal':
+        if evaluate == 'oddsratio':
+            individual_str = str(individual)
+            uniq_col_count = 0
+            for col_num in range(len(x)):
+                col_name = 'X{}'.format(col_num)
+                if col_name in individual_str:
+                    uniq_col_count += 1
+
+            return igsum, len(individual) / float(uniq_col_count), sum_of_diffs
+#           return igsum, len(individual), sum_of_diffs
+        elif evaluate == 'normal':
             return igsum, len(individual)
         else:
             return igsum_avg, len(individual)
@@ -306,9 +330,13 @@ if(model_file != ""):
     func = toolbox.compile(expr=individual)
     result = [(func(*inst[:inst_length])) for inst in data]
     nresult = evals.reclass_result(x, result, prcnt)
-    outfile = outdir + 'results_using_model_from-' + os.path.basename(model_file) 
+    outfile = outdir + 'results_using_model_from_' + os.path.basename(model_file) 
     print('Write result to',outfile)
     IO.create_file(x,nresult,outfile)
+    if Trees == True: # (-T)
+        M = gp.PrimitiveTree.from_string(individual,pset)
+        print('saving tree plot to ' + outdir + 'tree_' + str(rseed) + '.pdf')
+        plots.plot_tree(M,rseed,outdir)
     sys.exit(0)
 #
 # Start evaluation here
@@ -321,8 +349,16 @@ for ind in hof:
     fitness.append(ind.fitness.values)
 
 for i in range(len(hof)):
-    print("Best", i, "=", best[i])
-    print("Fitness", i, '=', fitness[i])
+    #print("Best\t" + str(i) + "\t" + str(best[i]))
+    print("Best\t" + str(i) + "\t" + str(best[i]) + '\t' + str(fitness[i][0]))
+#for i in range(len(hof)):
+#    print("Fitness\t" + str(i) + "\t" + str(fitness[i]))
+#for i in range(len(hof)):
+#    print("SumOfDiff\t" + str(i) + "\t" + str(best[i].SOD))
+
+if evaluate == 'oddsratio':
+    IO.create_OR_table(best,fitness,rseed,outdir,rowxcol,popstr,
+                       genstr,evaluate,ig)
 
 record = stats.compile(pop)
 print("statistics:")
@@ -330,11 +366,11 @@ print(record)
 
 tottime = time.time() - start
 if tottime > 3600:
-    IO.printf("\nRuntime: %.2f hours\n", tottime/3600)
+    printf("\nRuntime: %.2f hours\n", tottime/3600)
 elif tottime > 60:
-    IO.printf("\nRuntime: %.2f minutes\n", tottime/60)
+    printf("\nRuntime: %.2f minutes\n", tottime/60)
 else:
-    IO.printf("\nRuntime: %.2f seconds\n", tottime)
+    printf("\nRuntime: %.2f seconds\n", tottime)
 df = pd.DataFrame(logbook)
 del df['gen']
 del df['nevals']
@@ -351,26 +387,26 @@ else:
 if not os.path.exists(outdir):
     os.makedirs(outdir)
 
-outfile = outdir + "results-" + file1 + "-" + str(rseed) + '-' 
-outfile += evaluate + "-" + str(ig) + "way.txt" 
+outfile = outdir + "results-" + file1 + "-" + rowxcol + '-' 
+outfile += 's' + str(rseed) + '-' 
+outfile += popstr + '-'
+outfile += genstr + '-'
+outfile += evaluate + "-" + 'ig' + str(ig) + "way.txt" 
 print("writing data with Class to", outfile)
 labels.sort(key=op.itemgetter(0),reverse=True)     # sort by igsum (score)
 IO.create_file(x,labels[0][1],outfile)       # use first individual
 #
 # write top model out to file
 #
-moutfile = outdir + "model-" + file1 + "-" + str(rseed) + '-' 
-moutfile += evaluate + "-" + str(ig) + "way.txt" 
+moutfile = outdir + "model-" + file1 + "-" + rowxcol + '-' 
+moutfile += 's' + str(rseed) + '-' 
+moutfile += popstr + '-'
+moutfile += genstr + '-'
+moutfile += evaluate + "-" + 'ig' + str(ig) + "way.txt" 
 print("writing model to", moutfile)
 IO.write_model(moutfile, best)
 #
-# test results against other data
-#
-#if rdf_count == 0:
-#    files = glob.glob('data/in*')
-#    files.sort()
-#
-#  Test remaining data files with best individual
+#  Test remaining data files with best individual (-r)
 #
 save_seed = rseed
 if(infile == 'random' or rdf_count > 0):
@@ -389,40 +425,21 @@ if(infile == 'random' or rdf_count > 0):
         outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
         print(outfile)
         IO.create_file(X,nresult,outfile)
-#else:
-#    print('number of files:',len(files))
-#    for i in range(len(files)):
-#        rseed += 1
-#        if files[i] == infile: continue
-#        nfile = os.path.splitext(os.path.basename(files[i]))[0]
-#        print(infile)
-#        print()
-#        D, X = IO.read_file(files[i]) #  new data file
-#        print('input file:', files[i])
-#        individual = best[0]
-#        func = toolbox.compile(expr=individual)
-#        result = [(func(*inst[:inst_length])) for inst in D]
-#        nresult = evals.reclass_result(X, result, prcnt)
-#        outfile = outdir + 'model_from-' + file1 + '-using-' + nfile + '-'
-#        outfile += str(rseed) + '-' + nfile + '-'
-#        outfile += str(evaluate) + '-' + str(ig) + "way.txt" 
-#        print(outfile)
-#        IO.create_file(X,nresult,outfile)
 #
 # plot data if selected
 #
 file = os.path.splitext(os.path.basename(infile))[0]
-if Stats == True:
+if Stats == True: # (-S)
     statfile = outdir + "stats-" + file + "-" + evaluate 
     statfile += "-" + str(rseed) + ".pdf"
     print('saving stats to', statfile)
     plots.plot_stats(df,statfile)
 
-if Trees == True:
+if Trees == True: # (-T)
     print('saving tree plot to ' + outdir + 'tree_' + str(save_seed) + '.pdf')
     plots.plot_tree(best[0],save_seed,outdir)
 
-if Fitness == True:
+if Fitness == True: # (-F)
     outfile = outdir
     outfile += "fitness-" + file + "-" + evaluate + "-" + str(rseed) + ".pdf"
     print('saving fitness plot to', outfile)

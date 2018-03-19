@@ -16,7 +16,7 @@
 #==============================================================================
 import matplotlib
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set(color_codes=True)
+#import seaborn as sns; sns.set(color_codes=True)
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 from deap import gp
@@ -26,7 +26,7 @@ import pandas as pd
 def plot_tree(best,rseed,outdir):
     """ create tree plots from best array """
     nodes, edges, labels = gp.graph(best)
-    matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
+    matplotlib.rcParams['figure.figsize'] = (15.0, 15.0)
     
     g = nx.Graph()
     g.add_nodes_from(nodes)
@@ -35,35 +35,35 @@ def plot_tree(best,rseed,outdir):
     
     f = plt.figure()
     nx.draw_networkx_nodes(g, pos, node_size=1500, 
-                           font_size=8, node_color='lightblue')
+                           font_size=7, node_color='lightblue')
     nx.draw_networkx_edges(g, pos)
-    nx.draw_networkx_labels(g, pos, labels, font_size=8)
+    nx.draw_networkx_labels(g, pos, labels, font_size=7)
     plotfile = outdir + "tree_" + str(rseed) + ".pdf"
     plt.title(str(best))
     f.savefig(plotfile)
 ###############################################################################
-def plot_trees(best):
-    """ create tree plots from best array """
-    for i in range(len(best)):
-        nodes, edges, labels = gp.graph(best[i])
-        matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
-
-        g = nx.Graph()
-        g.add_nodes_from(nodes)
-        g.add_edges_from(edges)
-        pos = graphviz_layout(g, prog="dot")
-    
-        f = plt.figure()
-        nx.draw_networkx_nodes(g, pos, node_size=1500, 
-                               font_size=8, node_color='lightblue')
-        nx.draw_networkx_edges(g, pos)
-        nx.draw_networkx_labels(g, pos, labels, font_size=8)
-        if (i < 10):
-            plotfile = "tree_0" + str(i) + ".pdf"
-        else:    
-            plotfile = "tree_" + str(i) + ".pdf"
-        plt.title(str(best[i]))
-        f.savefig(plotfile)
+#def plot_trees(best):
+#    """ create tree plots from best array """
+#    for i in range(len(best)):
+#        nodes, edges, labels = gp.graph(best[i])
+#        matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)
+#
+#        g = nx.Graph()
+#        g.add_nodes_from(nodes)
+#        g.add_edges_from(edges)
+#        pos = graphviz_layout(g, prog="dot")
+#    
+#        f = plt.figure()
+#        nx.draw_networkx_nodes(g, pos, node_size=1500, 
+#                               font_size=7, node_color='lightblue')
+#        nx.draw_networkx_edges(g, pos)
+#        nx.draw_networkx_labels(g, pos, labels, font_size=7)
+#        if (i < 10):
+#            plotfile = "tree_0" + str(i) + ".pdf"
+#        else:    
+#            plotfile = "tree_" + str(i) + ".pdf"
+#        plt.title(str(best[i]))
+#        f.savefig(plotfile)
 ###############################################################################
 def plot_stats(df,statfile):
     matplotlib.rcParams['figure.figsize'] = (10.0, 10.0)

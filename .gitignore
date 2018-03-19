@@ -7,22 +7,38 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+*.egg
+*.egg-info/
+*.ipynb
+.*.swp
+.DS_Store
 .Python
-env/
+.Spotlight-V100
+.Trashes
+.dropbox.attr
+.eggs/
+.installed.cfg
+.ipynb_checkpoints/
+archive/
 build/
+data/
+dev/
 develop-eggs/
 dist/
+docs/
 downloads/
 eggs/
-.eggs/
+env/
+hibachi2/
 lib/
 lib64/
+notebooks/
+old/
 parts/
+results/
 sdist/
+support/
 var/
-*.egg-info/
-.installed.cfg
-*.egg
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
