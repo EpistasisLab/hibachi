@@ -23,7 +23,7 @@ optional arguments:
   -m MODEL_FILE, --model_file MODEL_FILE
                         model file to use to create Class from; otherwise
                         analyze data for new model. Other options available
-                        when using -m: [f,o,s,P]
+                        when using -m: [f,o,s,P,T]
   -o OUTDIR, --outdir OUTDIR
                         name of output directory (default = .) Note: the
                         directory will be created if it does not exist
@@ -45,3 +45,27 @@ optional arguments:
   -S, --statistics      plot statistics
   -T, --trees           plot best individual trees
   ```
+  Prerequisites:
+  ```
+  graphviz libraries
+  Python 3.4+ and packages
+    argparse
+    collections
+    csv
+    deap
+    glob
+    itertools
+    math
+    matplotlib
+    networkx
+    numpy 
+    operator
+    os
+    pandas
+    pygraphviz
+    random
+    scipy
+    sklearn
+    sys
+    time
+    ```
