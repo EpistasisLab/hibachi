@@ -35,6 +35,12 @@ import argparse
 import sys
 import os
 ###############################################################################
+def printf(format, *args):
+    """ works just like the C/C++ printf function """
+    import sys
+    sys.stdout.write(format % args)
+    sys.stdout.flush()
+###############################################################################
 def get_arguments():
     options = dict()
 
@@ -84,7 +90,7 @@ def get_arguments():
     args = parser.parse_args()
 
     if(args.file == None):
-        print('filename required')
+        printf("filename required\n")
         sys.exit()
     else:
         options['file'] = args.file
@@ -237,9 +243,3 @@ def create_OR_table(best,fitness,seed,outdir,rowxcol,popstr,
         f.write('\n')
 
     f.close()
-###############################################################################
-def printf(format, *args):
-    """ works just like the C/C++ printf function """
-    import sys
-    sys.stdout.write(format % args)
-    sys.stdout.flush()
