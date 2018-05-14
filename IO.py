@@ -200,7 +200,7 @@ def read_file(fname):
         data = rows of instances
         x is data transposed to rows of features """
     data = np.genfromtxt(fname, dtype=np.int, delimiter='\t') 
-    np.random.shuffle(data) # give the data a good row shuffle
+    #np.random.shuffle(data) # give the data a good row shuffle
     x = data.transpose()
     return data.tolist(), x.tolist()
 ###############################################################################
