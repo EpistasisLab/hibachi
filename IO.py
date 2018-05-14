@@ -22,11 +22,12 @@
 #                 170710: added option to process given model
 #                         added read_model and write_model
 #                 180307: added oddsratio to evaluate options
+#                 180514: removed shuffle from read_data()
 #        AUTHOR:  Pete Schmitt (discovery (iMac)), pschmitt@upenn.edu
 #       COMPANY:  University of Pennsylvania
-#       VERSION:  0.1.13
+#       VERSION:  0.1.14
 #       CREATED:  02/06/2017 14:54:24 EST
-#      REVISION:  Wed Mar  7 10:50:27 EST 2018
+#      REVISION:  Mon May 14 11:50:42 EDT 2018
 #==============================================================================
 import pandas as pd
 import csv
