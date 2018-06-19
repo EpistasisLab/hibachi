@@ -50,7 +50,7 @@ def get_arguments():
 
     parser.add_argument('-e', '--evaluation', type=str,
             help='name of evaluation [normal|folds|subsets|noise|oddsratio]' +
-                 ' (default=normal) note: oddsration sets columns == 10')
+                 ' (default=normal) note: oddsratio sets columns == 10')
     parser.add_argument('-f', '--file', type=str,
             help='name of training data file (REQ)' +
                  ' filename of random will create all data')
