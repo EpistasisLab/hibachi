@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+    <key id="d0" for="node" attr.name="weight" attr.type="double"/>
+    <key id="d1" for="node" attr.name="fill" attr.type="string"/>
+    <key id="d2" for="node" attr.name="label" attr.type="string"/>
+    <key id="d3" for="node" attr.name="shape" attr.type="string"/>
+    <key id="d4" for="edge" attr.name="weight" attr.type="double"/>	
+    <key id="d5" for="edge" attr.name="line" attr.type="string"/>
+     <graph id="G" edgedefault="undirected">
+     	    <node id="n0"/>
+	          <data key="d0">0.003005</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs11249433</data>
+	          <data key="d3">ellipse</data>	
+     	    <node id="n1"/>
+	          <data key="d0">0.001651</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs4849887</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n2"/>
+	          <data key="d0">0.000342</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs2016394</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n3"/> 
+	          <data key="d0">0.000958</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1550623</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n4"/> 
+	          <data key="d0">0.001019</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs6762644</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n5"/> 
+	          <data key="d0">0.000595</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs4973768</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n6"/> 
+	          <data key="d0">0.000571</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1053338</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n7"/> 
+	          <data key="d0">0.000469</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1353747</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n8"/> 
+	          <data key="d0">0.000201</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1432679</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n9"/> 
+	          <data key="d0">0.000131</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs204247</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n10"/> 
+	          <data key="d0">0.000021</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs11977670</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n11"/> 
+	          <data key="d0">0.000808</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs720475</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n12"/> 
+	          <data key="d0">0.001094</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs9693444</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n13"/> 
+	          <data key="d0">0.001905</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs11780156</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n14"/> 
+	          <data key="d0">0.000197</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1011970</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n15"/> 
+	          <data key="d0">0.001162</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs7072776</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n16"/> 
+	          <data key="d0">0.000040</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs704010</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n17"/> 
+	          <data key="d0">0.000175</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs7904519</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n18"/> 
+	          <data key="d0">0.000007</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs11199914</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n19"/> 
+	          <data key="d0">0.000351</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs3817198</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n20"/> 
+	          <data key="d0">0.000481</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs17356907</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n21"/> 
+	          <data key="d0">0.000828</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1292011</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n22"/> 
+	          <data key="d0">0.001932</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs999737</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n23"/> 
+	          <data key="d0">0.000163</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs11627032</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n24"/> 
+	          <data key="d0">0.002487</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs13329835</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n25"/> 
+	          <data key="d0">0.000016</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs1436904</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n26"/> 
+	          <data key="d0">0.000178</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs3760982</data>
+	          <data key="d3">ellipse</data>
+     	    <node id="n27"/> 
+	          <data key="d0">0.000633</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs2823093</data>
+	          <data key="d3">ellipse</data>
+	    <node id="n28"/> 
+	          <data key="d0">0.001254</data>
+	          <data key="d1">color1</data>
+	          <data key="d2">rs616488</data>
+	          <data key="d3">ellipse</data>
+	    <node id="n29"/> 
+	          <data key="d0">0.008564</data>
+	          <data key="d1">color2</data>
+	          <data key="d3">triangle</data>
+	    <node id="n30"/> 
+	          <data key="d0">0.008234</data>
+	          <data key="d1">color2</data>
+	          <data key="d3">triangle</data>
+	    <node id="n31"/> 
+	          <data key="d0">0.008024</data>
+	          <data key="d1">color2</data>
+	          <data key="d3">triangle</data>
+	    <edge source="n29" target="n16"/>
+	          <data key="d5">dash</data>
+	    <edge source="n29" target="n10"/>
+	          <data key="d5">dash</data>
+	    <edge source="n29" target="n1"/>
+	          <data key="d5">dash</data>
+	    <edge source="n30" target="n19"/>
+	          <data key="d5">dash</data>
+	    <edge source="n30" target="n24"/>
+	          <data key="d5">dash</data>
+	    <edge source="n30" target="n2"/>
+	          <data key="d5">dash</data>
+	    <edge source="n31" target="n2"/>
+	          <data key="d5">dash</data>
+	    <edge source="n31" target="n9"/>
+	          <data key="d5">dash</data>
+	    <edge source="n31" target="n10"/>
+	          <data key="d5">dash</data>
+	    <edge source="n3" target="n11"/>
+	          <data key="d4">0.004291</data>
+	          <data key="d5">solid</data>
+	    <edge source="n3" target="n6"/>
+	          <data key="d4">0.003923</data>
+	          <data key="d5">solid</data>
+	    <edge source="n6" target="n12"/>
+	          <data key="d4">0.003526</data>
+	          <data key="d5">solid</data>
+	    <edge source="n10" target="n21"/>
+	          <data key="d4">0.005246</data>
+	          <data key="d5">solid</data>
+	    <edge source="n18" target="n22"/>
+	          <data key="d4">0.003373</data>
+	          <data key="d5">solid</data>
+	    <edge source="n18" target="n1"/>
+	          <data key="d4">0.003304</data>
+	          <data key="d5">solid</data>
+	    <edge source="n18" target="n13"/>
+	          <data key="d4">0.004632</data>
+	          <data key="d5">solid</data>
+	    <edge source="n13" target="n20"/>
+	          <data key="d4">0.004761</data>
+	          <data key="d5">solid</data>
+	    <edge source="n20" target="n23"/>
+	          <data key="d4">0.003840</data>
+	          <data key="d5">solid</data>
+	    <edge source="n23" target="n7"/>
+	          <data key="d4">0.003312</data>
+	          <data key="d5">solid</data>
+	    <edge source="n23" target="n2"/>
+	          <data key="d4">0.003323</data>
+	          <data key="d5">solid</data>
+	</graph>
+</graphml>

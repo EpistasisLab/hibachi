@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+     http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+    <key id="d0" for="node" attr.name="weight" attr.type="double"/>
+    <key id="d1" for="node" attr.name="label" attr.type="string"/>
+    <key id="d2" for="node" attr.name="shape" attr.type="string"/>
+    <key id="d3" for="edge" attr.name="weight" attr.type="double"/>	
+    <key id="d4" for="edge" attr.name="line" attr.type="string"/>
+     <graph id="G" edgedefault="undirected">
+     	    <node id="x0"/>
+	          <data key="d0">0.003527</data>
+	          <data key="d1">X0</data>
+	          <data key="d2">ellipse</data>	
+
+     	    <node id="x1"/>
+	          <data key="d0">0.019480</data>
+	          <data key="d1">X1</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x2"/>
+	          <data key="d0">0.002716</data>
+	          <data key="d1">X2</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x3"/> 
+	          <data key="d0">0.001024</data>
+	          <data key="d1">X3</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x4"/> 
+	          <data key="d0">0.009391</data>
+	          <data key="d1">X4</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x5"/> 
+	          <data key="d0">0.000667</data>
+	          <data key="d1">X5</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x6"/> 
+	          <data key="d0">0.003490</data>
+	          <data key="d1">X6</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x7"/> 
+	          <data key="d0">0.001426</data>
+	          <data key="d1">X7</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x8"/> 
+	          <data key="d0">0.003460</data>
+	          <data key="d1">X8</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="x9"/> 
+	          <data key="d0">0.007464</data>
+	          <data key="d1">X9</data>
+	          <data key="d2">ellipse</data>
+
+     	    <node id="t1"/> 
+	          <data key="d0">0.067746</data>
+	          <data key="d2">triangle</data>
+
+     	    <node id="t2"/> 
+	          <data key="d0">0.041372</data>
+	          <data key="d2">triangle</data>
+
+     	    <node id="t3"/> 
+	          <data key="d0">0.040498</data>
+	          <data key="d2">triangle</data>
+
+	        <edge source="t1" target="x1"/>
+	          <data key="d4">dash</data>
+	        <edge source="t1" target="x5"/>
+	          <data key="d4">dash</data>
+	        <edge source="t1" target="x8"/>
+	          <data key="d4">dash</data>
+
+	        <edge source="t2" target="x1"/>
+	          <data key="d4">dash</data>
+	        <edge source="t2" target="x8"/>
+	          <data key="d4">dash</data>
+	        <edge source="t2" target="x9"/>
+	          <data key="d4">dash</data>
+
+	        <edge source="t3" target="x1"/>
+	          <data key="d4">dash</data>
+	        <edge source="t3" target="x5"/>
+	          <data key="d4">dash</data>
+	        <edge source="t3" target="x9"/>
+	          <data key="d4">dash</data>
+
+	    <edge source="x1" target="x5"/>
+	          <data key="d3">0.010488</data>
+	          <data key="d4">solid</data>
+	    <edge source="x1" target="x6"/>
+	          <data key="d3">0.007766</data>
+	          <data key="d4">solid</data>
+	    <edge source="x1" target="x8"/>
+	          <data key="d3">0.026083</data>
+	          <data key="d4">solid</data>
+	    <edge source="x1" target="x9"/>
+	          <data key="d3">0.020233</data>
+	          <data key="d4">solid</data>
+	    <edge source="x2" target="x3"/>
+	          <data key="d3">0.007294</data>
+	          <data key="d4">solid</data>
+	    <edge source="x2" target="x9"/>
+	          <data key="d3">0.009543</data>
+	          <data key="d4">solid</data>
+	    <edge source="x3" target="x4"/>
+	          <data key="d3">0.006506</data>
+	          <data key="d4">solid</data>
+	    <edge source="x3" target="x9"/>
+	          <data key="d3">0.005947</data>
+	          <data key="d4">solid</data>
+	    <edge source="x4" target="x6"/>
+	          <data key="d3">0.006931</data>
+	          <data key="d4">solid</data>
+	    <edge source="x4" target="x9"/>
+	          <data key="d3">0.007324</data>
+	          <data key="d4">solid</data>
+	    <edge source="x5" target="x9"/>
+	          <data key="d3">0.055524</data>
+	          <data key="d4">solid</data>
+	</graph>
+</graphml>
