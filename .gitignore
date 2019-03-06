@@ -25,7 +25,7 @@ data/
 dev/
 develop-eggs/
 dist/
-docs/
+# docs/
 downloads/
 eggs/
 env/
@@ -38,7 +38,7 @@ parts/
 results/
 sdist/
 singhal/
-support/
+# support/
 var/
 
 # PyInstaller
